@@ -1,14 +1,11 @@
 import streamlit as st
 import cv2
 import numpy as np
-import matplotlib.pyplot as plt
 from tensorflow.keras.models import load_model
 import tempfile
 
-# ------------------ Page Config ------------------
 st.set_page_config(page_title="Brain Tumor Segmentation", page_icon="🧠", layout="wide")
 
-# ------------------ Load Model ------------------
 @st.cache_resource
 def load_segmentation_model():
     model = load_model("final_model.keras", compile=False)
@@ -16,7 +13,6 @@ def load_segmentation_model():
 
 model = load_segmentation_model()
 
-# ------------------ Preprocessing Function ------------------
 def preprocess_image(image_path, size=(256, 256)):
     img = cv2.imread(image_path, cv2.IMREAD_COLOR)
     if img is None:
@@ -30,7 +26,6 @@ def preprocess_image(image_path, size=(256, 256)):
     img = cv2.resize(img, size)
     return img.astype(np.float32) / 255.0
 
-# ------------------ Prediction Function ------------------
 def predict_tumor(image_path):
     pre_img = preprocess_image(image_path)
     input_img = np.expand_dims(pre_img, axis=0)
@@ -44,25 +39,24 @@ def predict_tumor(image_path):
     
     return orig_resized, pred_mask.squeeze(), overlay
 
-# ------------------ UI ------------------
 st.title("🧠 Brain Tumor Segmentation")
-st.markdown("Upload an MRI image to detect and visualize tumor regions using deep learning.")
+st.markdown("""
+Upload an MRI brain scan image to automatically detect and segment tumor regions using deep learning.
+This model uses **EfficientNetB4** with U-Net architecture for precise segmentation.
+""")
 
 uploaded_file = st.file_uploader("Choose an MRI Image", type=["jpg", "jpeg", "png"])
 
 if uploaded_file is not None:
-    # Save uploaded file temporarily
     with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as tmp_file:
         tmp_file.write(uploaded_file.read())
         tmp_path = tmp_file.name
     
-    st.success("Image uploaded successfully!")
+    st.success("✅ Image uploaded successfully!")
     
-    # Run prediction
-    with st.spinner("Running segmentation..."):
+    with st.spinner("Running segmentation model..."):
         orig, mask, overlay = predict_tumor(tmp_path)
     
-    # Display results
     col1, col2, col3 = st.columns(3)
     
     with col1:
@@ -74,7 +68,15 @@ if uploaded_file is not None:
         st.image(mask, use_container_width=True, clamp=True)
     
     with col3:
-        st.subheader("Overlay")
+        st.subheader("Overlay (Tumor in Red)")
         st.image(cv2.cvtColor(overlay, cv2.COLOR_BGR2RGB), use_container_width=True)
     
-    st.success("✅ Segmentation complete!")
+    st.success("🎯 Segmentation complete!")
+    
+    with st.expander("ℹ️ About this model"):
+        st.write("""
+        **Model Architecture:** EfficientNetB4 + U-Net Decoder  
+        **Input:** 256×256 RGB MRI images  
+        **Preprocessing:** LAB color space, CLAHE enhancement, Gaussian blur  
+        **Output:** Binary segmentation mask for tumor regions  
+        """)
