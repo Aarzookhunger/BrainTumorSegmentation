@@ -8,7 +8,7 @@ Built with [Streamlit](https://streamlit.io/), this tool allows users to upload 
 ## 🚀 Live Demo
 
 Access the app at:  
-**[_https://braintumorsegmentation-u7bgpkqnz29weqnpfzfka9.streamlit.app/_](#)**
+**[Streamlit Cloud URL](https://braintumorsegmentation-u7bgpkqnz29weqnpfzfka9.streamlit.app/)**
 
 ---
 
