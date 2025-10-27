@@ -2,51 +2,50 @@ import streamlit as st
 import cv2
 import numpy as np
 from tensorflow.keras.models import load_model
+import tempfile
 from PIL import Image
 import io
-import tempfile
 import time
 
-st.set_page_config(page_title="Brain Tumor Detection", layout="centered")
+st.set_page_config(page_title="Brain Tumor Detection", layout="wide")
 
 st.markdown("""
 <style>
-    body, .stApp {
-        background-color: #f8fafc;
-    }
-    .main .block-container {
-        background-color: white;
-        padding: 2.5rem;
-        border-radius: 12px;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
-        max-width: 900px;
-        margin: 2rem auto;
-    }
-    h1 {
-        color: #1f2937;
-        text-align: center;
-        font-size: 2.2rem;
-        margin-bottom: 1rem;
-    }
-    .caption {
-        text-align: center;
-        color: #6b7280;
-        margin-bottom: 2rem;
-    }
-    .stDownloadButton button {
-        background-color: #2563eb;
-        color: white;
-        border-radius: 6px;
-        border: none;
-        padding: 0.5rem 1rem;
-        font-weight: 500;
-        transition: all 0.2s ease-in;
-    }
-    .stDownloadButton button:hover {
-        background-color: #1d4ed8;
-    }
-    footer {visibility: hidden;}
-    header {visibility: hidden;}
+body, .stApp {
+    background: #141927;
+}
+.main .block-container {
+    background: #191c27;
+    border-radius: 14px;
+    box-shadow: 0 3px 18px rgba(0,0,0,0.15);
+    padding-top: 2.5rem;
+    padding-bottom: 2rem;
+}
+h1 {
+    color: #e0e0e0;
+    text-align: center;
+    font-size: 2.2rem;
+    margin-bottom: 1rem;
+}
+.caption { color: #b0b5be; text-align: center;
+    font-size: 1.05rem;
+    margin-bottom: 2.0rem;}
+.stDownloadButton button {
+    background-color: #3b82f6;
+    color: #eee;
+    border-radius: 7px;
+    border: none;
+    padding: 0.55rem 1.3rem;
+    font-weight: 500;
+    margin-top: 0.4rem;
+}
+.stDownloadButton button:hover {
+    background: linear-gradient(90deg,#486eb7,#3493da);
+    color: #fff;
+}
+hr {border-top: 2px solid #2e3355;}
+footer {visibility: hidden;}
+header {visibility: hidden;}
 </style>
 """, unsafe_allow_html=True)
 
@@ -77,51 +76,65 @@ def predict_tumor(image_path):
     orig = cv2.imread(image_path)
     orig_resized = cv2.resize(orig, (256, 256))
     overlay = orig_resized.copy()
-    overlay[pred_mask.squeeze() == 255] = [0, 0, 255]
+    overlay[pred_mask.squeeze() == 255] = [15, 159, 253]
     return orig_resized, pred_mask.squeeze(), overlay, runtime
 
+if "history" not in st.session_state:
+    st.session_state.history = []
+
 st.title("Brain Tumor Segmentation")
-st.markdown('<p class="caption">Upload an MRI scan to automatically detect and highlight tumor regions.</p>', unsafe_allow_html=True)
+st.markdown('<div class="caption">Upload one or more MRI scans to analyze for tumor regions.<br>All results are kept in your session history below.</div>', unsafe_allow_html=True)
 
-uploaded_file = st.file_uploader("Upload MRI Image", type=["jpg", "jpeg", "png"])
+uploaded_files = st.file_uploader("Upload MRI Images", type=["jpg", "jpeg", "png"], accept_multiple_files=True, key="multiupload")
 
-if uploaded_file:
-    with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as tmp:
-        tmp.write(uploaded_file.read())
-        tmp_path = tmp.name
+if uploaded_files:
+    for idx, uploaded_file in enumerate(uploaded_files):
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as tmp:
+            tmp.write(uploaded_file.read())
+            tmp_path = tmp.name
 
-    with st.spinner("Analyzing MRI scan..."):
-        orig, mask, overlay, runtime = predict_tumor(tmp_path)
+        with st.spinner(f"Analyzing {uploaded_file.name}..."):
+            orig, mask, overlay, runtime = predict_tumor(tmp_path)
 
-    st.success(f"Processing complete in {runtime:.2f}s")
+        tumor_pixels = np.sum(mask == 255)
+        total_pixels = mask.size
+        tumor_pct = (tumor_pixels / total_pixels) * 100
 
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        st.image(cv2.cvtColor(orig, cv2.COLOR_BGR2RGB), caption="Original Image", use_container_width=True)
-    with col2:
-        st.image(mask, caption="Predicted Mask", use_container_width=True, clamp=True)
-    with col3:
-        st.image(cv2.cvtColor(overlay, cv2.COLOR_BGR2RGB), caption="Tumor Highlight", use_container_width=True)
+        st.markdown(f'<hr>', unsafe_allow_html=True)
+        cols = st.columns([2,2,2,2])
+        cols[0].image(cv2.cvtColor(orig, cv2.COLOR_BGR2RGB), caption="Original", use_container_width=True)
+        cols[1].image(mask, caption="Predicted Mask", use_container_width=True, clamp=True)
+        cols[2].image(cv2.cvtColor(overlay, cv2.COLOR_BGR2RGB), caption="Tumor Highlight", use_container_width=True)
+        cols[3].metric("Tumor Area", f"{tumor_pct:.2f}%")
+        st.info(f"Processing time: {runtime:.2f}s", icon="ℹ️")
 
-    tumor_pixels = np.sum(mask == 255)
-    total_pixels = mask.size
-    tumor_pct = (tumor_pixels / total_pixels) * 100
+        mask_img = Image.fromarray(mask)
+        overlay_img = Image.fromarray(cv2.cvtColor(overlay, cv2.COLOR_BGR2RGB))
+        buf_mask = io.BytesIO()
+        buf_overlay = io.BytesIO()
+        mask_img.save(buf_mask, format="PNG")
+        overlay_img.save(buf_overlay, format="PNG")
+        c1, c2 = st.columns(2)
+        c1.download_button("Download Mask", buf_mask.getvalue(), f"mask_{uploaded_file.name}", "image/png")
+        c2.download_button("Download Overlay", buf_overlay.getvalue(), f"overlay_{uploaded_file.name}", "image/png")
 
-    st.metric("Detected Tumor Area", f"{tumor_pct:.2f}%")
+        st.session_state.history.append({
+            "name": uploaded_file.name,
+            "original": cv2.cvtColor(orig, cv2.COLOR_BGR2RGB),
+            "mask": mask.copy(),
+            "overlay": cv2.cvtColor(overlay, cv2.COLOR_BGR2RGB),
+            "tumor_pct": f"{tumor_pct:.2f}%"
+        })
 
-    mask_img = Image.fromarray(mask)
-    overlay_img = Image.fromarray(cv2.cvtColor(overlay, cv2.COLOR_BGR2RGB))
+st.markdown("<hr>", unsafe_allow_html=True)
 
-    buf_mask = io.BytesIO()
-    buf_overlay = io.BytesIO()
-    mask_img.save(buf_mask, format="PNG")
-    overlay_img.save(buf_overlay, format="PNG")
-
-    c1, c2 = st.columns(2)
-    with c1:
-        st.download_button("Download Segmentation Mask", buf_mask.getvalue(), f"mask_{uploaded_file.name}", "image/png")
-    with c2:
-        st.download_button("Download Tumor Overlay", buf_overlay.getvalue(), f"overlay_{uploaded_file.name}", "image/png")
-
+if st.session_state.history:
+    st.markdown('<h3 style="color:#fff; margin-top:2rem;">Session History</h3>', unsafe_allow_html=True)
+    for i, item in enumerate(st.session_state.history[::-1]):
+        ch = st.columns([2,2,2,1.1])
+        ch[0].image(item["original"], caption=f"Original ({item['name']})", width=120)
+        ch[1].image(item["mask"], caption="Mask", width=120, clamp=True)
+        ch[2].image(item["overlay"], caption="Overlay", width=120)
+        ch[3].markdown(f"<span style='color:#5eead4;font-weight:500'>{item['tumor_pct']}</span>", unsafe_allow_html=True)
 else:
-    st.info("Please upload an image to begin analysis.")
+    st.info("No history yet. Process images to view session history.")
