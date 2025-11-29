@@ -12,121 +12,104 @@ st.set_page_config(page_title="Brain Tumor Detection", layout="wide")
 # ----------------- GLOBAL STYLES -----------------
 st.markdown("""
 <style>
-/* Background + global text color */
 body, .stApp {
-    background: #e2f0ff;  /* medical bluish */
-    color: #111111 !important;
+    background: #ddefff;  /* light medical blue */
+    color: #000000 !important;
 }
 
-/* Main container card */
+/* Main card */
 .main .block-container {
     background: #ffffff;
     border-radius: 14px;
-    box-shadow: 0 4px 16px rgba(15, 23, 42, 0.12);
-    padding-top: 1.5rem;
+    box-shadow: 0 4px 16px rgba(15, 23, 42, 0.10);
+    padding-top: 1rem;
     padding-bottom: 2rem;
     border: 1px solid #e5e7eb;
 }
 
-/* Top navbar */
-.top-nav {
-    position: sticky;
-    top: 0;
-    z-index: 999;
-    background: #ffffff;
-    border-bottom: 2px solid #2563eb;
-    box-shadow: 0 2px 8px rgba(15,23,42,0.12);
-    padding: 0.55rem 1.6rem;
-    display: flex;
-    align-items: center;
-}
-.nav-logo {
-    font-size: 1.6rem;
-    margin-right: 0.6rem;
-}
-.nav-title {
-    color: #111111;
-    font-weight: 700;
-    font-size: 1.1rem;
-}
-
-/* Typography */
-h1, h2, h3, h4, h5, h6 {
-    color: #111111 !important;
+/* Titles and general text */
+h1, h2, h3, h4, h5, h6, label, p, span, div {
+    color: #000000 !important;
 }
 h1 {
-    text-align: left;
     font-size: 1.9rem !important;
-    margin-bottom: 0.4rem;
 }
-.caption { 
-    color: #111111; 
-    text-align: left;
+.caption {
     font-size: 0.95rem;
+    margin-bottom: 1rem;
+}
+
+/* Patient card */
+.patient-card {
+    background: #f5f7ff;
+    border-radius: 12px;
+    border: 1px solid #c8d6f2;
+    padding: 1rem 1.2rem;
     margin-bottom: 1.2rem;
 }
 
-/* Inputs like clinical form */
+/* Inputs */
 [data-testid="stTextInput"] input,
 [data-testid="stTextArea"] textarea,
 [data-testid="stSelectbox"] div[data-baseweb="select"] {
     background-color: #ffffff !important;
-    color: #111111 !important;
+    color: #000000 !important;
     border-radius: 8px !important;
     border: 1px solid #9ca3af !important;
 }
 [data-testid="stTextInput"] label,
 [data-testid="stTextArea"] label,
 [data-testid="stSelectbox"] label {
-    color: #111111 !important;
     font-size: 0.85rem !important;
 }
 
-/* Patient section card */
-.patient-card {
-    background: #f8fbff;
-    border-radius: 12px;
-    border: 1px solid #d0def2;
-    padding: 1rem 1.2rem;
-    margin-bottom: 1.2rem;
+/* Upload – make it look like a small button, not a long pill */
+.upload-inline {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.75rem;
+    margin-top: 0.5rem;
 }
 
-/* Upload MRI – small, centered */
-.upload-wrapper {
-    max-width: 260px;
-    margin: 0.5rem auto 0 auto;
+.upload-inline [data-testid="stFileUploader"] {
+    max-width: 150px;
 }
-[data-testid="stFileUploader"] > div:first-child {
-    display: none; /* hide default label row */
+
+/* hide the big drop area and leave only the button */
+.upload-inline [data-testid="stFileUploaderDropzone"] {
+    border: none !important;
+    padding: 0 !important;
+    background: transparent !important;
 }
-[data-testid="stFileUploaderDropzone"] {
-    border-radius: 999px !important;
-    padding: 0.25rem 0.6rem !important;
-    border: 1px dashed #60a5fa !important;
-    background-color: #f0f6ff !important;
-}
-[data-testid="stFileUploaderDropzone"] > div {
+.upload-inline [data-testid="stFileUploaderDropzone"] > div {
+    padding: 0 !important;
+    margin: 0 !important;
     justify-content: center !important;
 }
-[data-testid="stFileUploaderDropzone"] span {
-    display: none !important;  /* hide "Drag and drop..." + size text */
+.upload-inline [data-testid="stFileUploaderDropzone"] span {
+    display: none !important;  /* no "Drag and drop..." etc. */
 }
 
-/* Analyze button */
+/* Buttons */
+.stButton button {
+    border-radius: 999px !important;
+    padding: 0.35rem 1.1rem !important;
+}
 .analyze-btn button {
-    border-radius: 999px;
-    padding: 0.3rem 1.4rem;
+    background-color: #2563eb !important;
+    color: #ffffff !important;
 }
 
 /* Download buttons */
 .stDownloadButton button {
     background-color: #2563eb;
-    color: #f9fafb;
+    color: #ffffff;
     border-radius: 8px;
     border: none;
-    padding: 0.55rem 1.3rem;
+    padding: 0.45rem 1.1rem;
     font-weight: 500;
-    margin-top: 0.4rem;
+    margin-top: 0.3rem;
 }
 .stDownloadButton button:hover {
     background: #1d4ed8;
@@ -134,11 +117,11 @@ h1 {
 
 /* Session history cards */
 .history-card {
-    background: #f8fbff;
+    background: #f5f7ff;
     border-radius: 12px;
     border: 1px solid #d1d5db;
-    padding: 0.8rem 1rem;
-    margin-bottom: 0.9rem;
+    padding: 0.9rem 1.0rem;
+    margin-bottom: 1rem;
 }
 .history-header {
     display: flex;
@@ -147,18 +130,28 @@ h1 {
     margin-bottom: 0.4rem;
 }
 .hist-patient-name {
-    font-weight: 700;
-    font-size: 1.0rem;   /* bigger font */
-    color: #111111;
+    font-weight: 800;
+    font-size: 1.15rem;    /* bigger */
 }
 .hist-patient-meta {
-    font-size: 0.9rem;   /* bigger font */
-    color: #111111;
+    font-size: 1.0rem;     /* bigger */
 }
 .hist-tumor {
-    font-size: 0.95rem;
-    font-weight: 700;
+    font-size: 1.05rem;
+    font-weight: 800;
     color: #065f46;
+}
+
+/* Tumor metric custom text */
+.tumor-box-label {
+    font-size: 0.95rem;
+    font-weight: 600;
+    margin-bottom: 0.15rem;
+}
+.tumor-box-value {
+    font-size: 1.6rem;
+    font-weight: 800;
+    color: #2563eb;
 }
 
 /* Misc */
@@ -166,14 +159,6 @@ hr {border-top: 1px solid #e5e7eb;}
 footer {visibility: hidden;}
 header {visibility: hidden;}
 </style>
-""", unsafe_allow_html=True)
-
-# ----------------- NAVBAR -----------------
-st.markdown("""
-<div class="top-nav">
-  <span class="nav-logo">🧠</span>
-  <span class="nav-title">Brain Tumor Detection</span>
-</div>
 """, unsafe_allow_html=True)
 
 # ----------------- MODEL -----------------
@@ -195,18 +180,17 @@ def preprocess_image(image_path, size=(256, 256)):
     return img.astype(np.float32) / 255.0
 
 def predict_tumor(image_path):
-    """Return original, mask, and a softly blended heatmap overlay."""
     pre_img = preprocess_image(image_path)
     input_img = np.expand_dims(pre_img, axis=0)
     start_time = time.time()
     pred_mask = model.predict(input_img, verbose=0)[0]
     runtime = time.time() - start_time
 
-    pred_mask = (pred_mask > 0.5).astype(np.uint8) * 255  # (256,256,1)
+    pred_mask = (pred_mask > 0.5).astype(np.uint8) * 255
     orig = cv2.imread(image_path)
     orig_resized = cv2.resize(orig, (256, 256))
 
-    # --- soft overlay: blurred mask + heatmap ---
+    # Soft overlay
     mask_gray = pred_mask.squeeze().astype(np.uint8)
     soft_mask = cv2.GaussianBlur(mask_gray, (11, 11), 0)
     soft_mask = soft_mask.astype(np.float32) / 255.0
@@ -216,12 +200,11 @@ def predict_tumor(image_path):
 
     orig_f = orig_resized.astype(np.float32) / 255.0
     heat_f = heatmap.astype(np.float32) / 255.0
-    alpha = (soft_mask * 0.6)[..., None]  # up to 60% tint
+    alpha = (soft_mask * 0.6)[..., None]
 
     blended = orig_f * (1 - alpha) + heat_f * alpha
     overlay_rgb = (blended * 255).astype(np.uint8)
 
-    # subtle white contour on boundary
     contours, _ = cv2.findContours(mask_gray, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     cv2.drawContours(overlay_rgb, contours, -1, (255, 255, 255), 1)
 
@@ -232,14 +215,13 @@ if "history" not in st.session_state:
     st.session_state.history = []
 
 # ----------------- HEADER -----------------
-st.markdown('<a name="analyzer"></a>', unsafe_allow_html=True)
 st.title("Brain Tumor Segmentation")
 st.markdown(
-    '<div class="caption">Upload an MRI brain scan, add patient details, and run automatic tumor segmentation with slice-wise tumor area estimation.</div>',
+    '<div class="caption">Upload an MRI brain scan, add patient details, then run tumor segmentation to estimate tumor area on the slice.</div>',
     unsafe_allow_html=True
 )
 
-# ----------------- PATIENT DETAILS CARD -----------------
+# ----------------- PATIENT DETAILS -----------------
 st.markdown('<div class="patient-card">', unsafe_allow_html=True)
 st.markdown("#### Patient details", unsafe_allow_html=True)
 
@@ -251,30 +233,35 @@ with pd_col2:
     patient_age = st.text_input("Age", placeholder="e.g., 54")
     patient_gender = st.selectbox("Gender", ["-", "Male", "Female", "Other"], index=0)
 with pd_col3:
-    patient_notes = st.text_area(
-        "Clinical notes",
-        placeholder="Optional clinical context (symptoms, findings)...",
-        height=80
-    )
+    patient_notes = st.text_area("Clinical notes", placeholder="Optional remarks...", height=80)
 
-st.markdown("#### Upload MRI", unsafe_allow_html=True)
+st.markdown("#### MRI controls", unsafe_allow_html=True)
 
-# ---- small centered uploader ----
-st.markdown('<div class="upload-wrapper">', unsafe_allow_html=True)
-uploaded_files = st.file_uploader(
-    "",
-    type=["jpg", "jpeg", "png"],
-    accept_multiple_files=True,       # still supports multiple, just not written anywhere
-    key="multiupload",
-    label_visibility="collapsed"
-)
-st.markdown('</div>', unsafe_allow_html=True)
+# ---- Upload + Analyze buttons in one centered row ----
+c_left, c_mid, c_right = st.columns([1, 2, 1])
+with c_mid:
+    st.markdown('<div class="upload-inline">', unsafe_allow_html=True)
 
-# Analyze button (prevents auto-processing on every rerun)
-analyze_col = st.columns([1, 1, 1])[1]
-with analyze_col:
-    analyze_clicked = st.button("Analyze MRI", key="analyze_button", use_container_width=False)
-st.markdown('</div>', unsafe_allow_html=True)  # end patient-card
+    # Upload MRI (small)
+    upload_col, analyze_col = st.columns([1, 1])
+
+    with upload_col:
+        uploaded_files = st.file_uploader(
+            "",
+            type=["jpg", "jpeg", "png"],
+            accept_multiple_files=True,
+            key="multiupload",
+            label_visibility="collapsed"
+        )
+
+    with analyze_col:
+        st.markdown('<div class="analyze-btn">', unsafe_allow_html=True)
+        analyze_clicked = st.button("Analyze MRI")
+        st.markdown('</div>', unsafe_allow_html=True)
+
+    st.markdown('</div>', unsafe_allow_html=True)
+
+st.markdown('</div>', unsafe_allow_html=True)  # end patient card
 
 current_patient = {
     "name": (patient_name or "").strip(),
@@ -317,40 +304,43 @@ if analyze_clicked and uploaded_files:
         overlay_rgb = cv2.cvtColor(overlay, cv2.COLOR_BGR2RGB)
         cols[2].image(
             overlay_rgb,
-            caption="Tumor highlight (soft overlay)",
+            caption="Tumor highlight",
             use_container_width=True
         )
 
         with cols[3]:
-            st.metric(
-                label="Tumor area (this slice)",
-                value=f"{tumor_pct:.2f}%",
-                help="Approximate percentage of this MRI slice occupied by tumor."
-            )
-            st.write("---")
             st.markdown(
-                f"**Patient:** {current_patient.get('name') or 'Not specified'}<br>"
-                f"**ID:** {current_patient.get('id') or '-'}<br>"
-                f"**Age:** {current_patient.get('age') or '-'}",
+                f"""
+                <div class="tumor-box-label">Tumor area (this slice)</div>
+                <div class="tumor-box-value">{tumor_pct:.2f}%</div>
+                """,
                 unsafe_allow_html=True
+            )
+            st.write("")
+            st.markdown(
+                f"**Patient:** {current_patient.get('name') or 'Not specified'}  \n"
+                f"**ID:** {current_patient.get('id') or '-'}  \n"
+                f"**Age:** {current_patient.get('age') or '-'}",
             )
 
         st.info(f"Processing time: {runtime:.2f}s", icon="ℹ️")
 
         # Downloads
         mask_img = Image.fromarray(mask)
-        overlay_img = Image.fromarray(overlay_rgb)
         buf_mask = io.BytesIO()
-        buf_overlay = io.BytesIO()
         mask_img.save(buf_mask, format="PNG")
+
+        overlay_img = Image.fromarray(overlay_rgb)
+        buf_overlay = io.BytesIO()
         overlay_img.save(buf_overlay, format="PNG")
-        c1, c2 = st.columns(2)
-        c1.download_button("Download mask", buf_mask.getvalue(),
+
+        d1, d2 = st.columns(2)
+        d1.download_button("Download mask", buf_mask.getvalue(),
                            f"mask_{uploaded_file.name}", "image/png")
-        c2.download_button("Download overlay", buf_overlay.getvalue(),
+        d2.download_button("Download overlay", buf_overlay.getvalue(),
                            f"overlay_{uploaded_file.name}", "image/png")
 
-        # --- avoid duplicate entries in history for same file + patient ---
+        # Avoid duplicates in history
         exists = any(
             (h["name"] == uploaded_file.name) and
             (h.get("patient", {}).get("id") == current_patient.get("id")) and
@@ -371,8 +361,6 @@ if analyze_clicked and uploaded_files:
 st.markdown("<hr>", unsafe_allow_html=True)
 
 # ----------------- SESSION HISTORY -----------------
-st.markdown('<a name="session-history"></a>', unsafe_allow_html=True)
-
 if st.session_state.history:
     st.markdown("## Session history")
 
@@ -409,19 +397,18 @@ if st.session_state.history:
                 unsafe_allow_html=True
             )
 
-        ch = st.columns([2, 2, 2])
-        ch[0].image(item["original"],
-                    caption=f"Original ({item['name']})",
-                    use_container_width=True)
-        ch[1].image(item["mask"],
-                    caption="Mask",
-                    use_container_width=True,
-                    clamp=True)
-        ch[2].image(item["overlay"],
-                    caption="Overlay",
-                    use_container_width=True)
+        hcols = st.columns([2, 2, 2])
+        hcols[0].image(item["original"],
+                       caption=f"Original ({item['name']})",
+                       use_container_width=True)
+        hcols[1].image(item["mask"],
+                       caption="Mask",
+                       use_container_width=True,
+                       clamp=True)
+        hcols[2].image(item["overlay"],
+                       caption="Overlay",
+                       use_container_width=True)
 
         st.markdown('</div>', unsafe_allow_html=True)
-
 else:
-    st.info("No history yet. Click **Analyze MRI** after uploading to see results.")
+    st.info("No history yet. Upload an MRI and click **Analyze MRI** to generate results.")
