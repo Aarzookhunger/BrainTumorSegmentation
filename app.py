@@ -70,7 +70,7 @@ h1 {
     align-items: center;
     gap: 0.75rem;
     margin-top: 0.5rem;
-    color: #ffffff
+    color: #ffffff !important
 }
 
 .upload-inline [data-testid="stFileUploader"] {
@@ -96,10 +96,12 @@ h1 {
 .stButton button {
     border-radius: 999px ;
     padding: 0.35rem 1.1rem ;
+    background-color: #2563eb !important;
+    color: #ffffff !important;
 }
 .analyze-btn button {
-    background-color: #000000 ;
-    color: #ffffff ;
+    background-color: #2563eb !important;
+    color: #ffffff !important;
 }
 
 /* Download buttons */
@@ -408,5 +410,6 @@ if st.session_state.history:
         st.markdown('</div>', unsafe_allow_html=True)
 else:
     st.info("No history yet. Upload an MRI and click **Analyze MRI** to generate results.")
+
 
 
