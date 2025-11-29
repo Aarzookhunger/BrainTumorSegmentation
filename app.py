@@ -12,8 +12,10 @@ st.set_page_config(page_title="Brain Tumor Detection", layout="wide")
 # ----------------- GLOBAL STYLES -----------------
 st.markdown("""
 <style>
+/* Background + global text color */
 body, .stApp {
-    background: #f3f4f6;
+    background: #e2f0ff;  /* medical bluish */
+    color: #111111 !important;
 }
 
 /* Main container card */
@@ -26,7 +28,7 @@ body, .stApp {
     border: 1px solid #e5e7eb;
 }
 
-/* Top navbar - clean hospital style */
+/* Top navbar */
 .top-nav {
     position: sticky;
     top: 0;
@@ -37,45 +39,20 @@ body, .stApp {
     padding: 0.55rem 1.6rem;
     display: flex;
     align-items: center;
-    justify-content: space-between;
-}
-.nav-left {
-    display: flex;
-    align-items: center;
-    gap: 0.7rem;
 }
 .nav-logo {
     font-size: 1.6rem;
+    margin-right: 0.6rem;
 }
 .nav-title {
-    color: #111827;
+    color: #111111;
     font-weight: 700;
-    font-size: 1.05rem;
-}
-.nav-subtitle {
-    color: #6b7280;
-    font-size: 0.75rem;
-}
-.nav-right {
-    display: flex;
-    gap: 0.9rem;
-    font-size: 0.9rem;
-}
-.nav-link {
-    color: #2563eb;
-    text-decoration: none;
-    padding: 0.2rem 0.9rem;
-    border-radius: 999px;
-    border: 1px solid transparent;
-}
-.nav-link:hover {
-    border-color: #bfdbfe;
-    background: #eff6ff;
+    font-size: 1.1rem;
 }
 
-/* Typography – make titles dark, not white */
-h1, h2, h3, h4 {
-    color: #111827 !important;
+/* Typography */
+h1, h2, h3, h4, h5, h6 {
+    color: #111111 !important;
 }
 h1 {
     text-align: left;
@@ -83,40 +60,40 @@ h1 {
     margin-bottom: 0.4rem;
 }
 .caption { 
-    color: #4b5563; 
+    color: #111111; 
     text-align: left;
     font-size: 0.95rem;
     margin-bottom: 1.2rem;
 }
 
-/* Inputs look like clinical forms */
+/* Inputs like clinical form */
 [data-testid="stTextInput"] input,
 [data-testid="stTextArea"] textarea,
 [data-testid="stSelectbox"] div[data-baseweb="select"] {
     background-color: #ffffff !important;
-    color: #111827 !important;
+    color: #111111 !important;
     border-radius: 8px !important;
-    border: 1px solid #d1d5db !important;
+    border: 1px solid #9ca3af !important;
 }
 [data-testid="stTextInput"] label,
 [data-testid="stTextArea"] label,
 [data-testid="stSelectbox"] label {
-    color: #374151 !important;
+    color: #111111 !important;
     font-size: 0.85rem !important;
 }
 
 /* Patient section card */
 .patient-card {
-    background: #f9fafb;
+    background: #f8fbff;
     border-radius: 12px;
-    border: 1px solid #dbe2ea;
+    border: 1px solid #d0def2;
     padding: 1rem 1.2rem;
     margin-bottom: 1.2rem;
 }
 
-/* Upload MRI – compact pill, not full-screen */
+/* Upload MRI – small, centered */
 .upload-wrapper {
-    max-width: 340px;
+    max-width: 260px;
     margin: 0.5rem auto 0 auto;
 }
 [data-testid="stFileUploader"] > div:first-child {
@@ -125,14 +102,20 @@ h1 {
 [data-testid="stFileUploaderDropzone"] {
     border-radius: 999px !important;
     padding: 0.25rem 0.6rem !important;
-    border: 1px dashed #93c5fd !important;
-    background-color: #f9fbff !important;
+    border: 1px dashed #60a5fa !important;
+    background-color: #f0f6ff !important;
 }
 [data-testid="stFileUploaderDropzone"] > div {
     justify-content: center !important;
 }
 [data-testid="stFileUploaderDropzone"] span {
     display: none !important;  /* hide "Drag and drop..." + size text */
+}
+
+/* Analyze button */
+.analyze-btn button {
+    border-radius: 999px;
+    padding: 0.3rem 1.4rem;
 }
 
 /* Download buttons */
@@ -151,30 +134,31 @@ h1 {
 
 /* Session history cards */
 .history-card {
-    background: #f9fafb;
+    background: #f8fbff;
     border-radius: 12px;
     border: 1px solid #d1d5db;
-    padding: 0.7rem 0.9rem;
-    margin-bottom: 0.8rem;
+    padding: 0.8rem 1rem;
+    margin-bottom: 0.9rem;
 }
 .history-header {
     display: flex;
     justify-content: space-between;
     align-items: baseline;
-    margin-bottom: 0.3rem;
+    margin-bottom: 0.4rem;
 }
 .hist-patient-name {
-    font-weight: 600;
-    color: #111827;
+    font-weight: 700;
+    font-size: 1.0rem;   /* bigger font */
+    color: #111111;
 }
 .hist-patient-meta {
-    font-size: 0.75rem;
-    color: #6b7280;
+    font-size: 0.9rem;   /* bigger font */
+    color: #111111;
 }
 .hist-tumor {
-    font-size: 0.85rem;
-    font-weight: 600;
-    color: #059669;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #065f46;
 }
 
 /* Misc */
@@ -187,17 +171,8 @@ header {visibility: hidden;}
 # ----------------- NAVBAR -----------------
 st.markdown("""
 <div class="top-nav">
-  <div class="nav-left">
-    <span class="nav-logo">🧠</span>
-    <div>
-      <div class="nav-title">NeuroScan · Brain Tumor Segmentation</div>
-      <div class="nav-subtitle">Radiology Support • MRI Brain</div>
-    </div>
-  </div>
-  <div class="nav-right">
-    <a href="#analyzer" class="nav-link">Analyzer</a>
-    <a href="#session-history" class="nav-link">Session history</a>
-  </div>
+  <span class="nav-logo">🧠</span>
+  <span class="nav-title">Brain Tumor Detection</span>
 </div>
 """, unsafe_allow_html=True)
 
@@ -227,35 +202,30 @@ def predict_tumor(image_path):
     pred_mask = model.predict(input_img, verbose=0)[0]
     runtime = time.time() - start_time
 
-    # binary mask
     pred_mask = (pred_mask > 0.5).astype(np.uint8) * 255  # (256,256,1)
-
     orig = cv2.imread(image_path)
     orig_resized = cv2.resize(orig, (256, 256))
 
-    # ---------- nicer overlay: soft heatmap + feathered edges ----------
-    mask_gray = pred_mask.squeeze().astype(np.uint8)       # (256,256)
-    # soften edges to avoid "cut-out" effect
+    # --- soft overlay: blurred mask + heatmap ---
+    mask_gray = pred_mask.squeeze().astype(np.uint8)
     soft_mask = cv2.GaussianBlur(mask_gray, (11, 11), 0)
-    soft_mask = soft_mask.astype(np.float32) / 255.0       # 0..1
+    soft_mask = soft_mask.astype(np.float32) / 255.0
 
-    # create colored heatmap from mask
-    heatmap = cv2.applyColorMap(mask_gray, cv2.COLORMAP_MAGMA)  # medical-ish colormap
-    heatmap = cv2.cvtColor(heatmap, cv2.COLOR_BGR2RGB)          # convert for nicer colors
+    heatmap = cv2.applyColorMap(mask_gray, cv2.COLORMAP_MAGMA)
+    heatmap = cv2.cvtColor(heatmap, cv2.COLOR_BGR2RGB)
 
-    # convert to float for blending
     orig_f = orig_resized.astype(np.float32) / 255.0
     heat_f = heatmap.astype(np.float32) / 255.0
-    alpha = (soft_mask * 0.7)[..., None]  # 0..0.7 -> max 70% tint
+    alpha = (soft_mask * 0.6)[..., None]  # up to 60% tint
 
     blended = orig_f * (1 - alpha) + heat_f * alpha
-    overlay = (blended * 255).astype(np.uint8)
+    overlay_rgb = (blended * 255).astype(np.uint8)
 
-    # draw a subtle white contour to delineate tumor borders
+    # subtle white contour on boundary
     contours, _ = cv2.findContours(mask_gray, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    cv2.drawContours(overlay, contours, -1, (255, 255, 255), 1)
+    cv2.drawContours(overlay_rgb, contours, -1, (255, 255, 255), 1)
 
-    return orig_resized, mask_gray, cv2.cvtColor(overlay, cv2.COLOR_RGB2BGR), runtime
+    return orig_resized, mask_gray, cv2.cvtColor(overlay_rgb, cv2.COLOR_RGB2BGR), runtime
 
 # ----------------- SESSION STATE -----------------
 if "history" not in st.session_state:
@@ -265,7 +235,7 @@ if "history" not in st.session_state:
 st.markdown('<a name="analyzer"></a>', unsafe_allow_html=True)
 st.title("Brain Tumor Segmentation")
 st.markdown(
-    '<div class="caption">Upload MRI brain scans, add patient details, and review segmented tumor regions with slice-wise tumor area estimation.</div>',
+    '<div class="caption">Upload an MRI brain scan, add patient details, and run automatic tumor segmentation with slice-wise tumor area estimation.</div>',
     unsafe_allow_html=True
 )
 
@@ -287,22 +257,23 @@ with pd_col3:
         height=80
     )
 
-# ---- Upload MRI BELOW patient details, compact ----
 st.markdown("#### Upload MRI", unsafe_allow_html=True)
+
+# ---- small centered uploader ----
 st.markdown('<div class="upload-wrapper">', unsafe_allow_html=True)
 uploaded_files = st.file_uploader(
     "",
     type=["jpg", "jpeg", "png"],
-    accept_multiple_files=True,
+    accept_multiple_files=True,       # still supports multiple, just not written anywhere
     key="multiupload",
     label_visibility="collapsed"
 )
-st.markdown(
-    "<div style='text-align:center;font-size:0.85rem;color:#374151;margin-top:0.25rem;'>"
-    "Upload MRI (multiple slices allowed)</div>",
-    unsafe_allow_html=True
-)
-st.markdown('</div>', unsafe_allow_html=True)  # end upload-wrapper
+st.markdown('</div>', unsafe_allow_html=True)
+
+# Analyze button (prevents auto-processing on every rerun)
+analyze_col = st.columns([1, 1, 1])[1]
+with analyze_col:
+    analyze_clicked = st.button("Analyze MRI", key="analyze_button", use_container_width=False)
 st.markdown('</div>', unsafe_allow_html=True)  # end patient-card
 
 current_patient = {
@@ -313,9 +284,9 @@ current_patient = {
     "notes": (patient_notes or "").strip()
 }
 
-# ----------------- PROCESS UPLOADED FILES -----------------
-if uploaded_files:
-    for idx, uploaded_file in enumerate(uploaded_files):
+# ----------------- PROCESS WHEN ANALYZE CLICKED -----------------
+if analyze_clicked and uploaded_files:
+    for uploaded_file in uploaded_files:
         with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as tmp:
             tmp.write(uploaded_file.read())
             tmp_path = tmp.name
@@ -346,7 +317,7 @@ if uploaded_files:
         overlay_rgb = cv2.cvtColor(overlay, cv2.COLOR_BGR2RGB)
         cols[2].image(
             overlay_rgb,
-            caption="Tumor highlight (soft heatmap)",
+            caption="Tumor highlight (soft overlay)",
             use_container_width=True
         )
 
@@ -379,16 +350,23 @@ if uploaded_files:
         c2.download_button("Download overlay", buf_overlay.getvalue(),
                            f"overlay_{uploaded_file.name}", "image/png")
 
-        # Save to session history with patient details
-        st.session_state.history.append({
-            "name": uploaded_file.name,
-            "original": cv2.cvtColor(orig, cv2.COLOR_BGR2RGB),
-            "mask": mask.copy(),
-            "overlay": overlay_rgb,
-            "tumor_pct": f"{tumor_pct:.2f}%",
-            "tumor_pct_value": tumor_pct,
-            "patient": current_patient.copy()
-        })
+        # --- avoid duplicate entries in history for same file + patient ---
+        exists = any(
+            (h["name"] == uploaded_file.name) and
+            (h.get("patient", {}).get("id") == current_patient.get("id")) and
+            (h.get("patient", {}).get("name") == current_patient.get("name"))
+            for h in st.session_state.history
+        )
+        if not exists:
+            st.session_state.history.append({
+                "name": uploaded_file.name,
+                "original": cv2.cvtColor(orig, cv2.COLOR_BGR2RGB),
+                "mask": mask.copy(),
+                "overlay": overlay_rgb,
+                "tumor_pct": f"{tumor_pct:.2f}%",
+                "tumor_pct_value": tumor_pct,
+                "patient": current_patient.copy()
+            })
 
 st.markdown("<hr>", unsafe_allow_html=True)
 
@@ -398,7 +376,7 @@ st.markdown('<a name="session-history"></a>', unsafe_allow_html=True)
 if st.session_state.history:
     st.markdown("## Session history")
 
-    for i, item in enumerate(st.session_state.history[::-1]):
+    for item in reversed(st.session_state.history):
         patient = item.get("patient", {}) or {}
         p_name = patient.get("name") or "Unknown patient"
         p_id = patient.get("id") or "N/A"
@@ -446,4 +424,4 @@ if st.session_state.history:
         st.markdown('</div>', unsafe_allow_html=True)
 
 else:
-    st.info("No history yet. Process images to view session history.")
+    st.info("No history yet. Click **Analyze MRI** after uploading to see results.")
