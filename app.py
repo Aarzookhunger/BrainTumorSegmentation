@@ -228,13 +228,13 @@ st.markdown(
 st.markdown('<div class="patient-card">', unsafe_allow_html=True)
 st.markdown("#### Patient details", unsafe_allow_html=True)
 
-pd_col1, pd_col2, pd_col3 = st.columns([1.2, 1.0, 1.2])
+pd_col1, pd_col2= st.columns([1.0, 1.0])
 with pd_col1:
     patient_name = st.text_input("Patient name")
     patient_id = st.text_input("Patient ID")
 with pd_col2:
-    patient_age = st.text_input("Age", placeholder="e.g., 54")
-    patient_notes = st.text_area("Clinical notes", placeholder="Optional remarks...", height=80)
+    patient_age = st.text_input("Age")
+    patient_notes = st.text_area("Clinical notes", placeholder="Optional remarks...", height=45)
 
 st.markdown("#### MRI controls", unsafe_allow_html=True)
 
@@ -410,6 +410,7 @@ if st.session_state.history:
         st.markdown('</div>', unsafe_allow_html=True)
 else:
     st.info("No history yet. Upload an MRI and click **Analyze MRI** to generate results.")
+
 
 
 
