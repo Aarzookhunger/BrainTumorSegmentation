@@ -13,20 +13,20 @@ st.set_page_config(page_title="Brain Tumor Detection", layout="wide")
 st.markdown("""
 <style>
 body, .stApp {
-    background: #e5edf5;
+    background: #f3f4f6;
 }
 
 /* Main container card */
 .main .block-container {
-    background: #f9fafb;
+    background: #ffffff;
     border-radius: 14px;
     box-shadow: 0 4px 16px rgba(15, 23, 42, 0.12);
     padding-top: 1.5rem;
     padding-bottom: 2rem;
-    border: 1px solid #d1d5db;
+    border: 1px solid #e5e7eb;
 }
 
-/* Top navbar - hospital style */
+/* Top navbar - clean hospital style */
 .top-nav {
     position: sticky;
     top: 0;
@@ -73,11 +73,13 @@ body, .stApp {
     background: #eff6ff;
 }
 
-/* Typography */
+/* Typography – make titles dark, not white */
+h1, h2, h3, h4 {
+    color: #111827 !important;
+}
 h1 {
-    color: #111827;
     text-align: left;
-    font-size: 1.9rem;
+    font-size: 1.9rem !important;
     margin-bottom: 0.4rem;
 }
 .caption { 
@@ -100,27 +102,31 @@ h1 {
 [data-testid="stTextArea"] label,
 [data-testid="stSelectbox"] label {
     color: #374151 !important;
-    font-size: 0.85rem;
+    font-size: 0.85rem !important;
 }
 
 /* Patient section card */
 .patient-card {
-    background: #ffffff;
+    background: #f9fafb;
     border-radius: 12px;
     border: 1px solid #dbe2ea;
     padding: 1rem 1.2rem;
     margin-bottom: 1.2rem;
 }
 
-/* File uploader – compact and simple */
+/* Upload MRI – compact pill, not full-screen */
+.upload-wrapper {
+    max-width: 340px;
+    margin: 0.5rem auto 0 auto;
+}
 [data-testid="stFileUploader"] > div:first-child {
     display: none; /* hide default label row */
 }
 [data-testid="stFileUploaderDropzone"] {
     border-radius: 999px !important;
-    padding: 0.35rem 0.75rem !important;
+    padding: 0.25rem 0.6rem !important;
     border: 1px dashed #93c5fd !important;
-    background-color: #f3f4ff !important;
+    background-color: #f9fbff !important;
 }
 [data-testid="stFileUploaderDropzone"] > div {
     justify-content: center !important;
@@ -145,7 +151,7 @@ h1 {
 
 /* Session history cards */
 .history-card {
-    background: #ffffff;
+    background: #f9fafb;
     border-radius: 12px;
     border: 1px solid #d1d5db;
     padding: 0.7rem 0.9rem;
@@ -172,7 +178,7 @@ h1 {
 }
 
 /* Misc */
-hr {border-top: 1px solid #d1d5db;}
+hr {border-top: 1px solid #e5e7eb;}
 footer {visibility: hidden;}
 header {visibility: hidden;}
 </style>
@@ -214,32 +220,42 @@ def preprocess_image(image_path, size=(256, 256)):
     return img.astype(np.float32) / 255.0
 
 def predict_tumor(image_path):
+    """Return original, mask, and a softly blended heatmap overlay."""
     pre_img = preprocess_image(image_path)
     input_img = np.expand_dims(pre_img, axis=0)
     start_time = time.time()
     pred_mask = model.predict(input_img, verbose=0)[0]
     runtime = time.time() - start_time
-    pred_mask = (pred_mask > 0.5).astype(np.uint8) * 255
+
+    # binary mask
+    pred_mask = (pred_mask > 0.5).astype(np.uint8) * 255  # (256,256,1)
 
     orig = cv2.imread(image_path)
     orig_resized = cv2.resize(orig, (256, 256))
 
-    # Soft, medical-looking blending
-    color_layer = np.zeros_like(orig_resized)
-    color_layer[:] = (180, 130, 255)  # soft magenta (BGR)
-    blended_full = cv2.addWeighted(orig_resized, 0.70, color_layer, 0.30, 0)
+    # ---------- nicer overlay: soft heatmap + feathered edges ----------
+    mask_gray = pred_mask.squeeze().astype(np.uint8)       # (256,256)
+    # soften edges to avoid "cut-out" effect
+    soft_mask = cv2.GaussianBlur(mask_gray, (11, 11), 0)
+    soft_mask = soft_mask.astype(np.float32) / 255.0       # 0..1
 
-    overlay = orig_resized.copy()
-    mask_bool = pred_mask.squeeze() == 255
-    overlay[mask_bool] = blended_full[mask_bool]
+    # create colored heatmap from mask
+    heatmap = cv2.applyColorMap(mask_gray, cv2.COLORMAP_MAGMA)  # medical-ish colormap
+    heatmap = cv2.cvtColor(heatmap, cv2.COLOR_BGR2RGB)          # convert for nicer colors
 
-    # Thin contour around tumor
-    contours, _ = cv2.findContours(pred_mask.astype(np.uint8),
-                                   cv2.RETR_EXTERNAL,
-                                   cv2.CHAIN_APPROX_SIMPLE)
+    # convert to float for blending
+    orig_f = orig_resized.astype(np.float32) / 255.0
+    heat_f = heatmap.astype(np.float32) / 255.0
+    alpha = (soft_mask * 0.7)[..., None]  # 0..0.7 -> max 70% tint
+
+    blended = orig_f * (1 - alpha) + heat_f * alpha
+    overlay = (blended * 255).astype(np.uint8)
+
+    # draw a subtle white contour to delineate tumor borders
+    contours, _ = cv2.findContours(mask_gray, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     cv2.drawContours(overlay, contours, -1, (255, 255, 255), 1)
 
-    return orig_resized, pred_mask.squeeze(), overlay, runtime
+    return orig_resized, mask_gray, cv2.cvtColor(overlay, cv2.COLOR_RGB2BGR), runtime
 
 # ----------------- SESSION STATE -----------------
 if "history" not in st.session_state:
@@ -265,21 +281,28 @@ with pd_col2:
     patient_age = st.text_input("Age", placeholder="e.g., 54")
     patient_gender = st.selectbox("Gender", ["-", "Male", "Female", "Other"], index=0)
 with pd_col3:
-    patient_notes = st.text_area("Clinical notes", placeholder="Optional clinical context (symptoms, findings)...", height=80)
-
-# ---- Upload MRI BELOW patient details, centered ----
-st.markdown("#### Upload MRI", unsafe_allow_html=True)
-up_left, up_center, up_right = st.columns([1, 2, 1])
-with up_center:
-    uploaded_files = st.file_uploader(
-        "",
-        type=["jpg", "jpeg", "png"],
-        accept_multiple_files=True,
-        key="multiupload",
-        label_visibility="collapsed"
+    patient_notes = st.text_area(
+        "Clinical notes",
+        placeholder="Optional clinical context (symptoms, findings)...",
+        height=80
     )
-    st.markdown("<div style='text-align:center;font-size:0.85rem;color:#374151;margin-top:0.25rem;'>Upload MRI (multiple slices allowed)</div>", unsafe_allow_html=True)
 
+# ---- Upload MRI BELOW patient details, compact ----
+st.markdown("#### Upload MRI", unsafe_allow_html=True)
+st.markdown('<div class="upload-wrapper">', unsafe_allow_html=True)
+uploaded_files = st.file_uploader(
+    "",
+    type=["jpg", "jpeg", "png"],
+    accept_multiple_files=True,
+    key="multiupload",
+    label_visibility="collapsed"
+)
+st.markdown(
+    "<div style='text-align:center;font-size:0.85rem;color:#374151;margin-top:0.25rem;'>"
+    "Upload MRI (multiple slices allowed)</div>",
+    unsafe_allow_html=True
+)
+st.markdown('</div>', unsafe_allow_html=True)  # end upload-wrapper
 st.markdown('</div>', unsafe_allow_html=True)  # end patient-card
 
 current_patient = {
@@ -305,7 +328,6 @@ if uploaded_files:
         tumor_pct = (tumor_pixels / total_pixels) * 100
 
         st.markdown("<hr>", unsafe_allow_html=True)
-
         cols = st.columns([2.2, 2.2, 2.2, 1.4])
 
         cols[0].image(
@@ -324,11 +346,10 @@ if uploaded_files:
         overlay_rgb = cv2.cvtColor(overlay, cv2.COLOR_BGR2RGB)
         cols[2].image(
             overlay_rgb,
-            caption="Tumor highlight (blended)",
+            caption="Tumor highlight (soft heatmap)",
             use_container_width=True
         )
 
-        # Tumor metric + patient snippet
         with cols[3]:
             st.metric(
                 label="Tumor area (this slice)",
