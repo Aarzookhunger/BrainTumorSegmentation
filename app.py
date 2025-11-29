@@ -13,7 +13,7 @@ st.set_page_config(page_title="Brain Tumor Detection", layout="wide")
 st.markdown("""
 <style>
 body, .stApp {
-    background: #020617;   /* dark */
+    background: #020617;
     color: #e5e7eb !important;
 }
 
@@ -32,8 +32,9 @@ h1, h2, h3, h4, h5, h6 {
     color: #e5e7eb !important;
 }
 h1 {
-    font-size: 2rem !important;
+    font-size: 2.4rem !important;
     margin-bottom: 0.4rem;
+    font-weight: 800 !important;
 }
 .caption {
     font-size: 0.95rem;
@@ -88,29 +89,20 @@ label, p, span, div {
     border-color: #2563eb !important;
 }
 
-/* Download buttons */
-.stDownloadButton button {
-    background-color: #2563eb !important;
-    color: #ffffff !important;
-    border-radius: 8px;
-    border: none;
-    padding: 0.45rem 1.1rem;
-    font-weight: 500;
-    margin-top: 0.3rem;
-}
-.stDownloadButton button:hover {
-    background: #1d4ed8 !important;
+/* Upload + Analyze container: center content in both columns */
+.upload-analyze-row [data-testid="column"] {
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
-/* Upload MRI - make small, hide text, match height with Analyze button */
-.upload-row {
-    margin-top: 0.3rem;
-}
-.upload-col, .analyze-col {
-    max-width: 220px;
+/* Equal widths for uploader + button */
+.upload-col [data-testid="stFileUploader"],
+.analyze-col .stButton {
+    width: 220px;
 }
 
-/* shrink dropzone and match dark theme */
+/* Uploader dark, compact, with no extra text */
 .upload-col [data-testid="stFileUploaderDropzone"] {
     border-radius: 999px !important;
     padding: 0.25rem 0.6rem !important;
@@ -118,19 +110,19 @@ label, p, span, div {
     background-color: #020617 !important;
     min-height: 40px !important;
 }
-
-/* center contents */
 .upload-col [data-testid="stFileUploaderDropzone"] > div {
     justify-content: center !important;
 }
 
-/* hide "Drag and drop..." + size text */
-.upload-col [data-testid="stFileUploaderDropzone"] span {
+/* Hide drag/drop + 200MB text */
+.upload-col [data-testid="stFileUploaderDropzone"] * {
+    color: transparent !important;
     font-size: 0 !important;
 }
 
-/* restore font for the Browse button text */
-.upload-col [data-testid="stFileUploader"] button span {
+/* But keep Browse files text visible */
+.upload-col [data-testid="stFileUploader"] button * {
+    color: #e5e7eb !important;
     font-size: 0.85rem !important;
 }
 
@@ -150,11 +142,11 @@ label, p, span, div {
 }
 .hist-patient-name {
     font-weight: 800;
-    font-size: 1.2rem;    /* bigger */
+    font-size: 1.2rem;
     color: #e5e7eb;
 }
 .hist-patient-meta {
-    font-size: 1.0rem;    /* bigger */
+    font-size: 1.0rem;
     color: #cbd5f5;
 }
 .hist-tumor {
@@ -174,6 +166,10 @@ label, p, span, div {
     font-size: 1.7rem;
     font-weight: 800;
     color: #38bdf8;
+}
+.tumor-extra {
+    font-size: 0.90rem;
+    color: #9ca3af;
 }
 
 /* Misc */
@@ -236,7 +232,7 @@ if "history" not in st.session_state:
     st.session_state.history = []
 
 # ===================== HEADER =====================
-st.title("Brain Tumor Segmentation")
+st.title("🧠 Brain Tumor Segmentation")
 st.markdown(
     '<div class="caption">Upload an MRI brain scan, add patient details, then run tumor segmentation to estimate tumor area on the slice.</div>',
     unsafe_allow_html=True
@@ -246,7 +242,6 @@ st.markdown(
 st.markdown('<div class="patient-card">', unsafe_allow_html=True)
 st.markdown("#### Patient details", unsafe_allow_html=True)
 
-# layout: two columns for fields, then full-width clinical notes so it looks neat
 pd_left, pd_right = st.columns(2)
 with pd_left:
     patient_name = st.text_input("Patient name", placeholder="e.g., John Doe")
@@ -255,32 +250,38 @@ with pd_right:
     patient_age = st.text_input("Age", placeholder="e.g., 54")
     patient_gender = st.selectbox("Gender", ["-", "Male", "Female", "Other"], index=0)
 
-# full-width clinical notes, taller to look like two rows
+# bigger clinical notes box spanning width
 patient_notes = st.text_area(
     "Clinical notes",
     placeholder="Optional remarks...",
     height=110
 )
 
-st.markdown("#### MRI controls", unsafe_allow_html=True)
+st.markdown("#### Upload MRI scan of the patient", unsafe_allow_html=True)
 
-# ---- Upload + Analyze same width, centered ----
+# ---- Upload + Analyze same width, centered & vertically aligned ----
 sp1, mid, sp2 = st.columns([1, 2, 1])
 with mid:
+    st.markdown('<div class="upload-analyze-row">', unsafe_allow_html=True)
     uc1, uc2 = st.columns(2)
+
     with uc1:
-        st.markdown('<div class="upload-row upload-col">', unsafe_allow_html=True)
+        st.markdown('<div class="upload-col">', unsafe_allow_html=True)
         uploaded_files = st.file_uploader(
-            "Upload MRI",
+            "",
             type=["jpg", "jpeg", "png"],
             accept_multiple_files=True,
-            key="multiupload"
+            key="multiupload",
+            label_visibility="collapsed"   # no "Upload MRI" text
         )
         st.markdown('</div>', unsafe_allow_html=True)
+
     with uc2:
-        st.markdown('<div class="upload-row analyze-col analyze-btn">', unsafe_allow_html=True)
-        analyze_clicked = st.button("Analyze MRI", use_container_width=True)
+        st.markdown('<div class="analyze-col analyze-btn">', unsafe_allow_html=True)
+        analyze_clicked = st.button("Analyze MRI")
         st.markdown('</div>', unsafe_allow_html=True)
+
+    st.markdown('</div>', unsafe_allow_html=True)
 
 st.markdown('</div>', unsafe_allow_html=True)  # end patient-card
 
@@ -302,9 +303,12 @@ if analyze_clicked and uploaded_files:
         with st.spinner(f"Analyzing {uploaded_file.name}..."):
             orig, mask, overlay, runtime = predict_tumor(tmp_path)
 
-        tumor_pixels = np.sum(mask == 255)
-        total_pixels = mask.size
+        tumor_pixels = int(np.sum(mask == 255))
+        total_pixels = int(mask.size)
         tumor_pct = (tumor_pixels / total_pixels) * 100
+
+        # Dice cannot be computed without ground-truth mask
+        dice_text = "N/A (no ground-truth mask)"
 
         st.markdown("<hr>", unsafe_allow_html=True)
         cols = st.columns([2.2, 2.2, 2.2, 1.4])
@@ -334,6 +338,12 @@ if analyze_clicked and uploaded_files:
                 f"""
                 <div class="tumor-box-label">Tumor area (this slice)</div>
                 <div class="tumor-box-value">{tumor_pct:.2f}%</div>
+                <div class="tumor-extra">
+                    Dice coefficient: {dice_text}<br>
+                    Pixels in tumor: {tumor_pixels}<br>
+                    Slice size: {mask.shape[0]} × {mask.shape[1]}<br>
+                    Runtime: {runtime:.2f}s
+                </div>
                 """,
                 unsafe_allow_html=True
             )
@@ -343,7 +353,6 @@ if analyze_clicked and uploaded_files:
                 f"**ID:** {current_patient.get('id') or '-'}  \n"
                 f"**Age:** {current_patient.get('age') or '-'}",
             )
-        st.info(f"Processing time: {runtime:.2f}s", icon="ℹ️")
 
         # Downloads
         mask_img = Image.fromarray(mask)
@@ -375,6 +384,10 @@ if analyze_clicked and uploaded_files:
                 "overlay": overlay_rgb,
                 "tumor_pct": f"{tumor_pct:.2f}%",
                 "tumor_pct_value": tumor_pct,
+                "runtime": runtime,
+                "tumor_pixels": tumor_pixels,
+                "total_pixels": total_pixels,
+                "dice": dice_text,
                 "patient": current_patient.copy()
             })
 
@@ -391,6 +404,7 @@ if st.session_state.history:
         p_age = patient.get("age") or "N/A"
         p_gender = patient.get("gender") or "-"
         p_notes = patient.get("notes") or ""
+        dice_text = item.get("dice", "N/A")
 
         st.markdown('<div class="history-card">', unsafe_allow_html=True)
 
@@ -404,7 +418,7 @@ if st.session_state.history:
                 </div>
               </div>
               <div class="hist-tumor">
-                Tumor area (slice): {item['tumor_pct']}
+                Tumor area (slice): {item['tumor_pct']} · Dice: {dice_text}
               </div>
             </div>
             """,
