@@ -13,38 +13,42 @@ st.set_page_config(page_title="Brain Tumor Detection", layout="wide")
 st.markdown("""
 <style>
 body, .stApp {
-    background: #eef0f4;   /* neutral light */
-    color: #000000 !important;
+    background: #020617;   /* dark */
+    color: #e5e7eb !important;
 }
 
 /* Main card */
 .main .block-container {
-    background: #ffffff;
-    border-radius: 14px;
-    box-shadow: 0 4px 16px rgba(15, 23, 42, 0.08);
+    background: #020617;
+    border-radius: 0;
+    box-shadow: none;
     padding-top: 1rem;
     padding-bottom: 2rem;
-    border: 1px solid #e5e7eb;
+    border: none;
 }
 
 /* Titles / text */
-h1, h2, h3, h4, h5, h6, label, p, span, div {
-    color: #000000;
+h1, h2, h3, h4, h5, h6 {
+    color: #e5e7eb !important;
 }
 h1 {
     font-size: 2rem !important;
-    margin-bottom: 0.2rem;
+    margin-bottom: 0.4rem;
 }
 .caption {
     font-size: 0.95rem;
     margin-bottom: 1rem;
+    color: #9ca3af !important;
+}
+label, p, span, div {
+    color: #e5e7eb;
 }
 
 /* Patient details card */
 .patient-card {
-    background: #f8fafc;
+    background: #020617;
     border-radius: 12px;
-    border: 1px solid #d4d4d8;
+    border: 1px solid #1f2937;
     padding: 1rem 1.2rem;
     margin-bottom: 1.2rem;
 }
@@ -53,35 +57,41 @@ h1 {
 [data-testid="stTextInput"] input,
 [data-testid="stTextArea"] textarea,
 [data-testid="stSelectbox"] div[data-baseweb="select"] {
-    background-color: #ffffff !important;
-    color: #000000 !important;
+    background-color: #020617 !important;
+    color: #e5e7eb !important;
     border-radius: 8px !important;
-    border: 1px solid #9ca3af !important;
+    border: 1px solid #4b5563 !important;
 }
 [data-testid="stTextInput"] label,
 [data-testid="stTextArea"] label,
 [data-testid="stSelectbox"] label {
     font-size: 0.85rem !important;
+    color: #e5e7eb !important;
 }
 
 /* Buttons */
 .stButton button {
     border-radius: 999px !important;
-    padding: 0.35rem 1.2rem !important;
+    padding: 0.4rem 1.2rem !important;
     font-weight: 600 !important;
+    border: 1px solid #4b5563 !important;
+    background: #111827 !important;
+    color: #e5e7eb !important;
+}
+.stButton button:hover {
+    background: #1f2937 !important;
 }
 
-/* Analyze button color */
+/* Analyze button accent */
 .analyze-btn button {
     background-color: #2563eb !important;
-    color: #ffffff !important;
-    border: none !important;
+    border-color: #2563eb !important;
 }
 
 /* Download buttons */
 .stDownloadButton button {
-    background-color: #2563eb;
-    color: #ffffff;
+    background-color: #2563eb !important;
+    color: #ffffff !important;
     border-radius: 8px;
     border: none;
     padding: 0.45rem 1.1rem;
@@ -89,14 +99,46 @@ h1 {
     margin-top: 0.3rem;
 }
 .stDownloadButton button:hover {
-    background: #1d4ed8;
+    background: #1d4ed8 !important;
+}
+
+/* Upload MRI - make small, hide text, match height with Analyze button */
+.upload-row {
+    margin-top: 0.3rem;
+}
+.upload-col, .analyze-col {
+    max-width: 220px;
+}
+
+/* shrink dropzone and match dark theme */
+.upload-col [data-testid="stFileUploaderDropzone"] {
+    border-radius: 999px !important;
+    padding: 0.25rem 0.6rem !important;
+    border: 1px solid #4b5563 !important;
+    background-color: #020617 !important;
+    min-height: 40px !important;
+}
+
+/* center contents */
+.upload-col [data-testid="stFileUploaderDropzone"] > div {
+    justify-content: center !important;
+}
+
+/* hide "Drag and drop..." + size text */
+.upload-col [data-testid="stFileUploaderDropzone"] span {
+    font-size: 0 !important;
+}
+
+/* restore font for the Browse button text */
+.upload-col [data-testid="stFileUploader"] button span {
+    font-size: 0.85rem !important;
 }
 
 /* Session history cards */
 .history-card {
-    background: #f9fafb;
+    background: #020617;
     border-radius: 12px;
-    border: 1px solid #d1d5db;
+    border: 1px solid #1f2937;
     padding: 0.9rem 1.0rem;
     margin-bottom: 1rem;
 }
@@ -108,15 +150,17 @@ h1 {
 }
 .hist-patient-name {
     font-weight: 800;
-    font-size: 1.15rem;    /* bigger */
+    font-size: 1.2rem;    /* bigger */
+    color: #e5e7eb;
 }
 .hist-patient-meta {
-    font-size: 1.0rem;     /* bigger */
+    font-size: 1.0rem;    /* bigger */
+    color: #cbd5f5;
 }
 .hist-tumor {
     font-size: 1.05rem;
     font-weight: 800;
-    color: #065f46;
+    color: #22c55e;
 }
 
 /* Tumor box (current result) */
@@ -124,15 +168,16 @@ h1 {
     font-size: 0.95rem;
     font-weight: 600;
     margin-bottom: 0.15rem;
+    color: #cbd5f5;
 }
 .tumor-box-value {
     font-size: 1.7rem;
     font-weight: 800;
-    color: #2563eb;
+    color: #38bdf8;
 }
 
 /* Misc */
-hr {border-top: 1px solid #e5e7eb;}
+hr {border-top: 1px solid #1f2937;}
 footer {visibility: hidden;}
 header {visibility: hidden;}
 </style>
@@ -167,7 +212,6 @@ def predict_tumor(image_path):
     orig = cv2.imread(image_path)
     orig_resized = cv2.resize(orig, (256, 256))
 
-    # soft overlay
     mask_gray = pred_mask.squeeze().astype(np.uint8)
     soft_mask = cv2.GaussianBlur(mask_gray, (11, 11), 0)
     soft_mask = soft_mask.astype(np.float32) / 255.0
@@ -202,36 +246,43 @@ st.markdown(
 st.markdown('<div class="patient-card">', unsafe_allow_html=True)
 st.markdown("#### Patient details", unsafe_allow_html=True)
 
-pd_col1, pd_col2, pd_col3 = st.columns([1.2, 1.0, 1.2])
-with pd_col1:
+# layout: two columns for fields, then full-width clinical notes so it looks neat
+pd_left, pd_right = st.columns(2)
+with pd_left:
     patient_name = st.text_input("Patient name", placeholder="e.g., John Doe")
     patient_id = st.text_input("Patient ID / MRN", placeholder="e.g., MRN-001")
-with pd_col2:
+with pd_right:
     patient_age = st.text_input("Age", placeholder="e.g., 54")
     patient_gender = st.selectbox("Gender", ["-", "Male", "Female", "Other"], index=0)
-with pd_col3:
-    patient_notes = st.text_area("Clinical notes", placeholder="Optional remarks...", height=80)
+
+# full-width clinical notes, taller to look like two rows
+patient_notes = st.text_area(
+    "Clinical notes",
+    placeholder="Optional remarks...",
+    height=110
+)
 
 st.markdown("#### MRI controls", unsafe_allow_html=True)
 
-# ---- CENTERED SMALL "UPLOAD" + "ANALYZE" ----
-# Layout: [spacer] [upload col] [analyze col] [spacer]
-sp1, upload_col, analyze_col, sp2 = st.columns([2, 1, 1, 2])
+# ---- Upload + Analyze same width, centered ----
+sp1, mid, sp2 = st.columns([1, 2, 1])
+with mid:
+    uc1, uc2 = st.columns(2)
+    with uc1:
+        st.markdown('<div class="upload-row upload-col">', unsafe_allow_html=True)
+        uploaded_files = st.file_uploader(
+            "Upload MRI",
+            type=["jpg", "jpeg", "png"],
+            accept_multiple_files=True,
+            key="multiupload"
+        )
+        st.markdown('</div>', unsafe_allow_html=True)
+    with uc2:
+        st.markdown('<div class="upload-row analyze-col analyze-btn">', unsafe_allow_html=True)
+        analyze_clicked = st.button("Analyze MRI", use_container_width=True)
+        st.markdown('</div>', unsafe_allow_html=True)
 
-with upload_col:
-    uploaded_files = st.file_uploader(
-        "Upload MRI",
-        type=["jpg", "jpeg", "png"],
-        accept_multiple_files=True,
-        key="multiupload"
-    )
-
-with analyze_col:
-    st.markdown('<div class="analyze-btn">', unsafe_allow_html=True)
-    analyze_clicked = st.button("Analyze MRI", use_container_width=True)
-    st.markdown('</div>', unsafe_allow_html=True)
-
-st.markdown('</div>', unsafe_allow_html=True)  # close patient-card
+st.markdown('</div>', unsafe_allow_html=True)  # end patient-card
 
 current_patient = {
     "name": (patient_name or "").strip(),
@@ -309,7 +360,7 @@ if analyze_clicked and uploaded_files:
         d2.download_button("Download overlay", buf_overlay.getvalue(),
                            f"overlay_{uploaded_file.name}", "image/png")
 
-        # Avoid duplicates in history (same file + same patient)
+        # Avoid duplicates in history
         exists = any(
             (h["name"] == uploaded_file.name) and
             (h.get("patient", {}).get("id") == current_patient.get("id")) and
