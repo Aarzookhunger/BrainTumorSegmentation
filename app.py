@@ -264,7 +264,6 @@ current_patient = {
     "name": (patient_name or "").strip(),
     "id": (patient_id or "").strip(),
     "age": (patient_age or "").strip(),
-    "gender": patient_gender if patient_gender != "-" else "",
     "notes": (patient_notes or "").strip()
 }
 
@@ -377,7 +376,7 @@ if st.session_state.history:
               <div>
                 <div class="hist-patient-name">{p_name}</div>
                 <div class="hist-patient-meta">
-                    ID: {p_id} · Age: {p_age} · Gender: {p_gender}
+                    ID: {p_id} · Age: {p_age}
                 </div>
               </div>
               <div class="hist-tumor">
@@ -409,4 +408,5 @@ if st.session_state.history:
         st.markdown('</div>', unsafe_allow_html=True)
 else:
     st.info("No history yet. Upload an MRI and click **Analyze MRI** to generate results.")
+
 
