@@ -70,10 +70,11 @@ h1 {
     align-items: center;
     gap: 0.75rem;
     margin-top: 0.5rem;
+    color: #ffffff
 }
 
 .upload-inline [data-testid="stFileUploader"] {
-    max-width: 150px;
+    max-width: 100px;
 }
 
 /* hide the big drop area and leave only the button */
@@ -93,12 +94,12 @@ h1 {
 
 /* Buttons */
 .stButton button {
-    border-radius: 999px !important;
-    padding: 0.35rem 1.1rem !important;
+    border-radius: 999px ;
+    padding: 0.35rem 1.1rem ;
 }
 .analyze-btn button {
-    background-color: #2563eb !important;
-    color: #ffffff !important;
+    background-color: #000000 ;
+    color: #ffffff ;
 }
 
 /* Download buttons */
@@ -131,7 +132,7 @@ h1 {
 }
 .hist-patient-name {
     font-weight: 800;
-    font-size: 1.15rem;    /* bigger */
+    font-size: 1.25rem;    /* bigger */
 }
 .hist-patient-meta {
     font-size: 1.0rem;     /* bigger */
@@ -227,12 +228,10 @@ st.markdown("#### Patient details", unsafe_allow_html=True)
 
 pd_col1, pd_col2, pd_col3 = st.columns([1.2, 1.0, 1.2])
 with pd_col1:
-    patient_name = st.text_input("Patient name", placeholder="e.g., John Doe")
-    patient_id = st.text_input("Patient ID / MRN", placeholder="e.g., MRN-001")
+    patient_name = st.text_input("Patient name")
+    patient_id = st.text_input("Patient ID")
 with pd_col2:
     patient_age = st.text_input("Age", placeholder="e.g., 54")
-    patient_gender = st.selectbox("Gender", ["-", "Male", "Female", "Other"], index=0)
-with pd_col3:
     patient_notes = st.text_area("Clinical notes", placeholder="Optional remarks...", height=80)
 
 st.markdown("#### MRI controls", unsafe_allow_html=True)
@@ -248,9 +247,7 @@ with c_mid:
     with upload_col:
         uploaded_files = st.file_uploader(
             "",
-            type=["jpg", "jpeg", "png"],
             accept_multiple_files=True,
-            key="multiupload",
             label_visibility="collapsed"
         )
 
@@ -412,3 +409,4 @@ if st.session_state.history:
         st.markdown('</div>', unsafe_allow_html=True)
 else:
     st.info("No history yet. Upload an MRI and click **Analyze MRI** to generate results.")
+
