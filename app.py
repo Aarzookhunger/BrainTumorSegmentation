@@ -9,14 +9,14 @@ import time
 
 st.set_page_config(page_title="Brain Tumor Detection", layout="wide")
 
-# ----------------- GLOBAL STYLES (medical look) -----------------
+# ----------------- GLOBAL STYLES -----------------
 st.markdown("""
 <style>
 body, .stApp {
     background: #e5edf5;
 }
 
-/* Main card */
+/* Main container card */
 .main .block-container {
     background: #f9fafb;
     border-radius: 14px;
@@ -26,15 +26,15 @@ body, .stApp {
     border: 1px solid #d1d5db;
 }
 
-/* Navbar */
+/* Top navbar - hospital style */
 .top-nav {
     position: sticky;
     top: 0;
     z-index: 999;
-    background: #0f172a;
-    backdrop-filter: blur(12px);
-    border-bottom: 1px solid #1f2937;
-    padding: 0.65rem 1.4rem;
+    background: #ffffff;
+    border-bottom: 2px solid #2563eb;
+    box-shadow: 0 2px 8px rgba(15,23,42,0.12);
+    padding: 0.55rem 1.6rem;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -42,50 +42,65 @@ body, .stApp {
 .nav-left {
     display: flex;
     align-items: center;
-    gap: 0.6rem;
+    gap: 0.7rem;
 }
 .nav-logo {
-    font-size: 1.4rem;
+    font-size: 1.6rem;
 }
 .nav-title {
-    color: #e5e7eb;
-    font-weight: 600;
+    color: #111827;
+    font-weight: 700;
     font-size: 1.05rem;
 }
 .nav-subtitle {
-    color: #9ca3af;
-    font-size: 0.72rem;
+    color: #6b7280;
+    font-size: 0.75rem;
 }
 .nav-right {
     display: flex;
-    gap: 0.7rem;
+    gap: 0.9rem;
     font-size: 0.9rem;
 }
 .nav-link {
-    color: #9ca3af;
+    color: #2563eb;
     text-decoration: none;
-    padding: 0.2rem 0.7rem;
+    padding: 0.2rem 0.9rem;
     border-radius: 999px;
     border: 1px solid transparent;
 }
 .nav-link:hover {
-    color: #e5e7eb;
-    border-color: #374151;
-    background: #111827;
+    border-color: #bfdbfe;
+    background: #eff6ff;
 }
 
 /* Typography */
 h1 {
     color: #111827;
     text-align: left;
-    font-size: 1.8rem;
-    margin-bottom: 0.5rem;
+    font-size: 1.9rem;
+    margin-bottom: 0.4rem;
 }
 .caption { 
     color: #4b5563; 
     text-align: left;
     font-size: 0.95rem;
-    margin-bottom: 1.4rem;
+    margin-bottom: 1.2rem;
+}
+
+/* Inputs look like clinical forms */
+[data-testid="stTextInput"] input,
+[data-testid="stTextArea"] textarea,
+[data-testid="stSelectbox"] div[data-baseweb="select"] {
+    background-color: #ffffff !important;
+    color: #111827 !important;
+    border-radius: 8px !important;
+    border: 1px solid #d1d5db !important;
+}
+[data-testid="stTextInput"] label,
+[data-testid="stTextArea"] label,
+[data-testid="stSelectbox"] label {
+    color: #374151 !important;
+    font-size: 0.85rem;
 }
 
 /* Patient section card */
@@ -94,24 +109,24 @@ h1 {
     border-radius: 12px;
     border: 1px solid #dbe2ea;
     padding: 1rem 1.2rem;
-    margin-bottom: 0.8rem;
+    margin-bottom: 1.2rem;
 }
 
-/* Compact file uploader styling */
+/* File uploader – compact and simple */
 [data-testid="stFileUploader"] > div:first-child {
-    display: none; /* hide default label */
+    display: none; /* hide default label row */
 }
 [data-testid="stFileUploaderDropzone"] {
-    border-radius: 999px;
-    padding: 0.35rem 0.75rem;
-    border: 1px dashed #93c5fd;
-    background-color: #f3f4ff;
+    border-radius: 999px !important;
+    padding: 0.35rem 0.75rem !important;
+    border: 1px dashed #93c5fd !important;
+    background-color: #f3f4ff !important;
 }
 [data-testid="stFileUploaderDropzone"] > div {
-    justify-content: center;
+    justify-content: center !important;
 }
 [data-testid="stFileUploaderDropzone"] span {
-    font-size: 0.8rem;
+    display: none !important;  /* hide "Drag and drop..." + size text */
 }
 
 /* Download buttons */
@@ -140,7 +155,7 @@ h1 {
     display: flex;
     justify-content: space-between;
     align-items: baseline;
-    margin-bottom: 0.4rem;
+    margin-bottom: 0.3rem;
 }
 .hist-patient-name {
     font-weight: 600;
@@ -169,8 +184,8 @@ st.markdown("""
   <div class="nav-left">
     <span class="nav-logo">🧠</span>
     <div>
-      <div class="nav-title">NeuroScan — Tumor Segmentation</div>
-      <div class="nav-subtitle">Clinical Decision Support · MRI Brain</div>
+      <div class="nav-title">NeuroScan · Brain Tumor Segmentation</div>
+      <div class="nav-subtitle">Radiology Support • MRI Brain</div>
     </div>
   </div>
   <div class="nav-right">
@@ -209,16 +224,16 @@ def predict_tumor(image_path):
     orig = cv2.imread(image_path)
     orig_resized = cv2.resize(orig, (256, 256))
 
-    # Soft blending (no harsh patch)
+    # Soft, medical-looking blending
     color_layer = np.zeros_like(orig_resized)
-    color_layer[:] = (180, 130, 255)  # soft magenta (BGR) for medical overlay
+    color_layer[:] = (180, 130, 255)  # soft magenta (BGR)
     blended_full = cv2.addWeighted(orig_resized, 0.70, color_layer, 0.30, 0)
 
     overlay = orig_resized.copy()
     mask_bool = pred_mask.squeeze() == 255
     overlay[mask_bool] = blended_full[mask_bool]
 
-    # Thin contour to delineate tumor border
+    # Thin contour around tumor
     contours, _ = cv2.findContours(pred_mask.astype(np.uint8),
                                    cv2.RETR_EXTERNAL,
                                    cv2.CHAIN_APPROX_SIMPLE)
@@ -238,11 +253,11 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# ----------------- PATIENT DETAILS + UPLOAD -----------------
+# ----------------- PATIENT DETAILS CARD -----------------
 st.markdown('<div class="patient-card">', unsafe_allow_html=True)
-st.write("### Patient details & MRI upload")
+st.markdown("#### Patient details", unsafe_allow_html=True)
 
-pd_col1, pd_col2, pd_col3 = st.columns([1.2, 1, 1.2])
+pd_col1, pd_col2, pd_col3 = st.columns([1.2, 1.0, 1.2])
 with pd_col1:
     patient_name = st.text_input("Patient name", placeholder="e.g., John Doe")
     patient_id = st.text_input("Patient ID / MRN", placeholder="e.g., MRN-001")
@@ -252,9 +267,10 @@ with pd_col2:
 with pd_col3:
     patient_notes = st.text_area("Clinical notes", placeholder="Optional clinical context (symptoms, findings)...", height=80)
 
-# compact uploader in a small column so it doesn't span the whole line
-upload_col, _ = st.columns([1.2, 2])
-with upload_col:
+# ---- Upload MRI BELOW patient details, centered ----
+st.markdown("#### Upload MRI", unsafe_allow_html=True)
+up_left, up_center, up_right = st.columns([1, 2, 1])
+with up_center:
     uploaded_files = st.file_uploader(
         "",
         type=["jpg", "jpeg", "png"],
@@ -262,9 +278,9 @@ with upload_col:
         key="multiupload",
         label_visibility="collapsed"
     )
-    st.caption("**Upload MRI** (multiple slices allowed)")
+    st.markdown("<div style='text-align:center;font-size:0.85rem;color:#374151;margin-top:0.25rem;'>Upload MRI (multiple slices allowed)</div>", unsafe_allow_html=True)
 
-st.markdown('</div>', unsafe_allow_html=True)
+st.markdown('</div>', unsafe_allow_html=True)  # end patient-card
 
 current_patient = {
     "name": (patient_name or "").strip(),
@@ -312,7 +328,7 @@ if uploaded_files:
             use_container_width=True
         )
 
-        # Tumor metric + compact patient summary for this slice
+        # Tumor metric + patient snippet
         with cols[3]:
             st.metric(
                 label="Tumor area (this slice)",
@@ -355,7 +371,7 @@ if uploaded_files:
 
 st.markdown("<hr>", unsafe_allow_html=True)
 
-# ----------------- SESSION HISTORY (with patient details first) -----------------
+# ----------------- SESSION HISTORY -----------------
 st.markdown('<a name="session-history"></a>', unsafe_allow_html=True)
 
 if st.session_state.history:
@@ -371,14 +387,13 @@ if st.session_state.history:
 
         st.markdown('<div class="history-card">', unsafe_allow_html=True)
 
-        # Patient + tumor summary header
         st.markdown(
             f"""
             <div class="history-header">
               <div>
                 <div class="hist-patient-name">{p_name}</div>
                 <div class="hist-patient-meta">
-                    ID: {p_id} &nbsp;·&nbsp; Age: {p_age} &nbsp;·&nbsp; Gender: {p_gender}
+                    ID: {p_id} · Age: {p_age} · Gender: {p_gender}
                 </div>
               </div>
               <div class="hist-tumor">
@@ -395,7 +410,6 @@ if st.session_state.history:
                 unsafe_allow_html=True
             )
 
-        # MRI thumbnails
         ch = st.columns([2, 2, 2])
         ch[0].image(item["original"],
                     caption=f"Original ({item['name']})",
