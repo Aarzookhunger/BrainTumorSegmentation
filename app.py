@@ -89,39 +89,26 @@ label, p, span, div {
     border-color: #2563eb !important;
 }
 
-/* Upload + Analyze container: center content in both columns */
-.upload-analyze-row [data-testid="column"] {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
-/* Equal widths for uploader + button */
-.upload-col [data-testid="stFileUploader"],
-.analyze-col .stButton {
-    width: 220px;
-}
-
-/* Uploader dark, compact, with no extra text */
-.upload-col [data-testid="stFileUploaderDropzone"] {
+/* Upload: small, dark, no extra text */
+.upload-block [data-testid="stFileUploaderDropzone"] {
     border-radius: 999px !important;
     padding: 0.25rem 0.6rem !important;
     border: 1px solid #4b5563 !important;
     background-color: #020617 !important;
     min-height: 40px !important;
 }
-.upload-col [data-testid="stFileUploaderDropzone"] > div {
+.upload-block [data-testid="stFileUploaderDropzone"] > div {
     justify-content: center !important;
 }
 
-/* Hide drag/drop + 200MB text */
-.upload-col [data-testid="stFileUploaderDropzone"] * {
+/* hide drag/drop + 200MB text */
+.upload-block [data-testid="stFileUploaderDropzone"] * {
     color: transparent !important;
     font-size: 0 !important;
 }
 
-/* But keep Browse files text visible */
-.upload-col [data-testid="stFileUploader"] button * {
+/* show Browse files label */
+.upload-block [data-testid="stFileUploader"] button * {
     color: #e5e7eb !important;
     font-size: 0.85rem !important;
 }
@@ -244,43 +231,31 @@ st.markdown("#### Patient details", unsafe_allow_html=True)
 
 pd_left, pd_right = st.columns(2)
 with pd_left:
-    patient_name = st.text_input("Patient name", placeholder="e.g., John Doe")
-    patient_id = st.text_input("Patient ID / MRN", placeholder="e.g., MRN-001")
+    patient_name = st.text_input("Patient name")
+    patient_id = st.text_input("Patient ID / MRN")
 with pd_right:
-    patient_age = st.text_input("Age", placeholder="e.g., 54")
+    patient_age = st.text_input("Age")
     patient_gender = st.selectbox("Gender", ["-", "Male", "Female", "Other"], index=0)
 
-# bigger clinical notes box spanning width
-patient_notes = st.text_area(
-    "Clinical notes",
-    placeholder="Optional remarks...",
-    height=110
-)
+patient_notes = st.text_area("Clinical notes", height=110)
 
 st.markdown("#### Upload MRI scan of the patient", unsafe_allow_html=True)
 
-# ---- Upload + Analyze same width, centered & vertically aligned ----
-sp1, mid, sp2 = st.columns([1, 2, 1])
-with mid:
-    st.markdown('<div class="upload-analyze-row">', unsafe_allow_html=True)
-    uc1, uc2 = st.columns(2)
+# ---- Upload + Analyze in one vertical block ----
+sp1, center, sp2 = st.columns([1, 2, 1])
+with center:
+    st.markdown('<div class="upload-block">', unsafe_allow_html=True)
+    uploaded_files = st.file_uploader(
+        "",
+        type=["jpg", "jpeg", "png"],
+        accept_multiple_files=True,
+        key="multiupload",
+        label_visibility="collapsed"
+    )
+    st.markdown('</div>', unsafe_allow_html=True)
 
-    with uc1:
-        st.markdown('<div class="upload-col">', unsafe_allow_html=True)
-        uploaded_files = st.file_uploader(
-            "",
-            type=["jpg", "jpeg", "png"],
-            accept_multiple_files=True,
-            key="multiupload",
-            label_visibility="collapsed"   # no "Upload MRI" text
-        )
-        st.markdown('</div>', unsafe_allow_html=True)
-
-    with uc2:
-        st.markdown('<div class="analyze-col analyze-btn">', unsafe_allow_html=True)
-        analyze_clicked = st.button("Analyze MRI")
-        st.markdown('</div>', unsafe_allow_html=True)
-
+    st.markdown('<div class="analyze-btn" style="margin-top:0.6rem; text-align:center;">', unsafe_allow_html=True)
+    analyze_clicked = st.button("Analyze MRI")
     st.markdown('</div>', unsafe_allow_html=True)
 
 st.markdown('</div>', unsafe_allow_html=True)  # end patient-card
@@ -307,39 +282,62 @@ if analyze_clicked and uploaded_files:
         total_pixels = int(mask.size)
         tumor_pct = (tumor_pixels / total_pixels) * 100
 
-        # Dice cannot be computed without ground-truth mask
-        dice_text = "N/A (no ground-truth mask)"
-
         st.markdown("<hr>", unsafe_allow_html=True)
-        cols = st.columns([2.2, 2.2, 2.2, 1.4])
 
-        cols[0].image(
-            cv2.cvtColor(orig, cv2.COLOR_BGR2RGB),
-            caption=f"Original MRI slice ({uploaded_file.name})",
-            use_container_width=True
-        )
-
-        cols[1].image(
-            mask,
-            caption="Predicted mask",
-            use_container_width=True,
-            clamp=True
-        )
+        # -------- images + aligned download buttons --------
+        buf_mask = io.BytesIO()
+        Image.fromarray(mask).save(buf_mask, format="PNG")
 
         overlay_rgb = cv2.cvtColor(overlay, cv2.COLOR_BGR2RGB)
-        cols[2].image(
-            overlay_rgb,
-            caption="Tumor highlight",
-            use_container_width=True
-        )
+        buf_overlay = io.BytesIO()
+        Image.fromarray(overlay_rgb).save(buf_overlay, format="PNG")
 
-        with cols[3]:
+        img_cols = st.columns(3)
+
+        with img_cols[0]:
+            st.image(
+                cv2.cvtColor(orig, cv2.COLOR_BGR2RGB),
+                caption=f"Original MRI slice ({uploaded_file.name})",
+                use_container_width=True
+            )
+
+        with img_cols[1]:
+            st.image(
+                mask,
+                caption="Predicted mask",
+                use_container_width=True,
+                clamp=True
+            )
+            st.download_button(
+                "Download mask",
+                buf_mask.getvalue(),
+                f"mask_{uploaded_file.name}",
+                "image/png",
+                use_container_width=True
+            )
+
+        with img_cols[2]:
+            st.image(
+                overlay_rgb,
+                caption="Tumor highlight",
+                use_container_width=True
+            )
+            st.download_button(
+                "Download overlay",
+                buf_overlay.getvalue(),
+                f"overlay_{uploaded_file.name}",
+                "image/png",
+                use_container_width=True
+            )
+
+        # tumor stats + patient snippet
+        stats_col = st.columns([3, 1])[1]
+        with stats_col:
             st.markdown(
                 f"""
                 <div class="tumor-box-label">Tumor area (this slice)</div>
                 <div class="tumor-box-value">{tumor_pct:.2f}%</div>
                 <div class="tumor-extra">
-                    Dice coefficient: {dice_text}<br>
                     Pixels in tumor: {tumor_pixels}<br>
                     Slice size: {mask.shape[0]} × {mask.shape[1]}<br>
                     Runtime: {runtime:.2f}s
@@ -353,21 +351,6 @@ if analyze_clicked and uploaded_files:
                 f"**ID:** {current_patient.get('id') or '-'}  \n"
                 f"**Age:** {current_patient.get('age') or '-'}",
             )
-
-        # Downloads
-        mask_img = Image.fromarray(mask)
-        buf_mask = io.BytesIO()
-        mask_img.save(buf_mask, format="PNG")
-
-        overlay_img = Image.fromarray(overlay_rgb)
-        buf_overlay = io.BytesIO()
-        overlay_img.save(buf_overlay, format="PNG")
-
-        d1, d2 = st.columns(2)
-        d1.download_button("Download mask", buf_mask.getvalue(),
-                           f"mask_{uploaded_file.name}", "image/png")
-        d2.download_button("Download overlay", buf_overlay.getvalue(),
-                           f"overlay_{uploaded_file.name}", "image/png")
 
         # Avoid duplicates in history
         exists = any(
@@ -387,7 +370,6 @@ if analyze_clicked and uploaded_files:
                 "runtime": runtime,
                 "tumor_pixels": tumor_pixels,
                 "total_pixels": total_pixels,
-                "dice": dice_text,
                 "patient": current_patient.copy()
             })
 
@@ -404,7 +386,6 @@ if st.session_state.history:
         p_age = patient.get("age") or "N/A"
         p_gender = patient.get("gender") or "-"
         p_notes = patient.get("notes") or ""
-        dice_text = item.get("dice", "N/A")
 
         st.markdown('<div class="history-card">', unsafe_allow_html=True)
 
@@ -418,7 +399,7 @@ if st.session_state.history:
                 </div>
               </div>
               <div class="hist-tumor">
-                Tumor area (slice): {item['tumor_pct']} · Dice: {dice_text}
+                Tumor area (slice): {item['tumor_pct']}
               </div>
             </div>
             """,
@@ -431,7 +412,7 @@ if st.session_state.history:
                 unsafe_allow_html=True
             )
 
-        hcols = st.columns([2, 2, 2])
+        hcols = st.columns(3)
         hcols[0].image(item["original"],
                        caption=f"Original ({item['name']})",
                        use_container_width=True)
