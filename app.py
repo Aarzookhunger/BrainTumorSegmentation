@@ -17,7 +17,6 @@ body, .stApp {
     color: #e5e7eb !important;
 }
 
-/* Main card */
 .main .block-container {
     background: #020617;
     border-radius: 0;
@@ -27,7 +26,7 @@ body, .stApp {
     border: none;
 }
 
-/* Titles / text */
+/* Titles */
 h1, h2, h3, h4, h5, h6 {
     color: #e5e7eb !important;
 }
@@ -83,32 +82,34 @@ label, p, span, div {
     background: #1f2937 !important;
 }
 
-/* Analyze button accent */
+/* Analyze button: bluish */
 .analyze-btn button {
     background-color: #2563eb !important;
     border-color: #2563eb !important;
+    color: #ffffff !important;
 }
 
-/* Upload: small, dark, no extra text */
-.upload-block [data-testid="stFileUploaderDropzone"] {
+/* Centered small upload block */
+.center-upload {
+    max-width: 260px;
+    margin: 0 auto;
+}
+.center-upload [data-testid="stFileUploaderDropzone"] {
     border-radius: 999px !important;
-    padding: 0.25rem 0.6rem !important;
+    padding: 0.2rem 0.5rem !important;
     border: 1px solid #4b5563 !important;
     background-color: #020617 !important;
     min-height: 40px !important;
 }
-.upload-block [data-testid="stFileUploaderDropzone"] > div {
+.center-upload [data-testid="stFileUploaderDropzone"] > div {
     justify-content: center !important;
 }
 
-/* hide drag/drop + 200MB text */
-.upload-block [data-testid="stFileUploaderDropzone"] * {
-    color: transparent !important;
-    font-size: 0 !important;
+/* Hide drag/drop + 200MB text, keep only Browse button */
+.center-upload [data-testid="stFileUploaderDropzone"] > div:first-child {
+    display: none !important;
 }
-
-/* show Browse files label */
-.upload-block [data-testid="stFileUploader"] button * {
+.center-upload [data-testid="stFileUploader"] button * {
     color: #e5e7eb !important;
     font-size: 0.85rem !important;
 }
@@ -241,10 +242,10 @@ patient_notes = st.text_area("Clinical notes", height=110)
 
 st.markdown("#### Upload MRI scan of the patient", unsafe_allow_html=True)
 
-# ---- Upload + Analyze in one vertical block ----
-sp1, center, sp2 = st.columns([1, 2, 1])
-with center:
-    st.markdown('<div class="upload-block">', unsafe_allow_html=True)
+# ---- Centered small upload + centered analyze ----
+sp1, mid, sp2 = st.columns([3, 2, 3])
+with mid:
+    st.markdown('<div class="center-upload">', unsafe_allow_html=True)
     uploaded_files = st.file_uploader(
         "",
         type=["jpg", "jpeg", "png"],
@@ -281,6 +282,30 @@ if analyze_clicked and uploaded_files:
         tumor_pixels = int(np.sum(mask == 255))
         total_pixels = int(mask.size)
         tumor_pct = (tumor_pixels / total_pixels) * 100
+
+        # -------- Row with patient + numeric details BEFORE images --------
+        info_left, info_right = st.columns(2)
+        with info_left:
+            st.markdown(
+                f"**Patient:** {current_patient.get('name') or 'Not specified'}  \n"
+                f"**ID:** {current_patient.get('id') or '-'}  \n"
+                f"**Age:** {current_patient.get('age') or '-'}  \n"
+                f"**Gender:** {current_patient.get('gender') or '-'}  \n"
+                f"**Notes:** {current_patient.get('notes') or '-'}"
+            )
+        with info_right:
+            st.markdown(
+                f"""
+                <div class="tumor-box-label">Tumor area (this slice)</div>
+                <div class="tumor-box-value">{tumor_pct:.2f}%</div>
+                <div class="tumor-extra">
+                    Pixels in tumor: {tumor_pixels}<br>
+                    Slice size: {mask.shape[0]} × {mask.shape[1]}<br>
+                    Runtime: {runtime:.2f}s
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
 
         st.markdown("<hr>", unsafe_allow_html=True)
 
@@ -328,28 +353,6 @@ if analyze_clicked and uploaded_files:
                 f"overlay_{uploaded_file.name}",
                 "image/png",
                 use_container_width=True
-            )
-
-        # tumor stats + patient snippet
-        stats_col = st.columns([3, 1])[1]
-        with stats_col:
-            st.markdown(
-                f"""
-                <div class="tumor-box-label">Tumor area (this slice)</div>
-                <div class="tumor-box-value">{tumor_pct:.2f}%</div>
-                <div class="tumor-extra">
-                    Pixels in tumor: {tumor_pixels}<br>
-                    Slice size: {mask.shape[0]} × {mask.shape[1]}<br>
-                    Runtime: {runtime:.2f}s
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
-            st.write("")
-            st.markdown(
-                f"**Patient:** {current_patient.get('name') or 'Not specified'}  \n"
-                f"**ID:** {current_patient.get('id') or '-'}  \n"
-                f"**Age:** {current_patient.get('age') or '-'}",
             )
 
         # Avoid duplicates in history
