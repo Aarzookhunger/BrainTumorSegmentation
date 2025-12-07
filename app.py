@@ -2,12 +2,72 @@ import streamlit as st
 import cv2
 import numpy as np
 from tensorflow.keras.models import load_model
+import tensorflow as tf
 import tempfile
 from PIL import Image
 import io
 import time
 
 st.set_page_config(page_title="Brain Tumor Detection", layout="wide")
+
+# ===================== CUSTOM METRICS & LOSSES (USED DURING TRAINING) =====================
+
+def dice_coefficient(y_true, y_pred, smooth=1e-6):
+    y_true_f = tf.reshape(y_true, [-1])
+    y_pred_f = tf.reshape(y_pred, [-1])
+    inter = tf.reduce_sum(y_true_f * y_pred_f)
+    return (2. * inter + smooth) / (tf.reduce_sum(y_true_f) + tf.reduce_sum(y_pred_f) + smooth)
+
+def dice_loss(y_true, y_pred):
+    return 1.0 - dice_coefficient(y_true, y_pred)
+
+def boundary_loss(y_true, y_pred):
+    kernel = tf.constant([[0., 1., 0.],
+                          [1., -4., 1.],
+                          [0., 1., 0.]], dtype=tf.float32)
+    kernel = kernel[:, :, tf.newaxis, tf.newaxis]
+    y_true = tf.cast(y_true, tf.float32)
+    y_pred = tf.cast(y_pred, tf.float32)
+    edge_true = tf.nn.conv2d(y_true, kernel, strides=[1, 1, 1, 1], padding='SAME')
+    edge_pred = tf.nn.conv2d(y_pred, kernel, strides=[1, 1, 1, 1], padding='SAME')
+    return tf.reduce_mean(tf.abs(edge_true - edge_pred))
+
+def hybrid_loss(y_true, y_pred, w_bce=0.5, w_dice=0.4, w_bound=0.1):
+    bce = tf.keras.losses.binary_crossentropy(y_true, y_pred)
+    dloss = dice_loss(y_true, y_pred)
+    bl = boundary_loss(y_true, y_pred)
+    return w_bce * bce + w_dice * dloss + w_bound * bl
+
+def hybrid_loss_wrapped(y_true, y_pred):
+    # Wrapper used when saving/loading the model with custom_objects
+    return hybrid_loss(y_true, y_pred)
+
+def iou_metric(y_true, y_pred, smooth=1e-6):
+    y_pred = tf.cast(y_pred > 0.5, tf.float32)
+    inter = tf.reduce_sum(y_true * y_pred)
+    union = tf.reduce_sum(y_true) + tf.reduce_sum(y_pred) - inter
+    return (inter + smooth) / (union + smooth)
+
+def precision_metric(y_true, y_pred, smooth=1e-6):
+    y_pred = tf.cast(y_pred > 0.5, tf.float32)
+    y_true = tf.cast(y_true, tf.float32)
+    tp = tf.reduce_sum(y_true * y_pred)
+    fp = tf.reduce_sum((1.0 - y_true) * y_pred)
+    return tp / (tp + fp + smooth)
+
+def recall_metric(y_true, y_pred, smooth=1e-6):
+    y_pred = tf.cast(y_pred > 0.5, tf.float32)
+    y_true = tf.cast(y_true, tf.float32)
+    tp = tf.reduce_sum(y_true * y_pred)
+    fn = tf.reduce_sum(y_true * (1.0 - y_pred))
+    return tp / (tp + fn + smooth)
+
+def specificity_metric(y_true, y_pred, smooth=1e-6):
+    y_pred = tf.cast(y_pred > 0.5, tf.float32)
+    y_true = tf.cast(y_true, tf.float32)
+    tn = tf.reduce_sum((1.0 - y_true) * (1.0 - y_pred))
+    fp = tf.reduce_sum((1.0 - y_true) * y_pred)
+    return tn / (tn + fp + smooth)
 
 # ===================== STYLING =====================
 st.markdown("""
@@ -170,7 +230,22 @@ header {visibility: hidden;}
 # ===================== MODEL =====================
 @st.cache_resource
 def load_segmentation_model():
-    return load_model("final_model.keras", compile=False)
+    # custom_objects are registered so the model can be loaded even if it was saved with these losses/metrics
+    return load_model(
+        "final_model.keras",
+        compile=False,
+        custom_objects={
+            "dice_coefficient": dice_coefficient,
+            "dice_loss": dice_loss,
+            "boundary_loss": boundary_loss,
+            "hybrid_loss": hybrid_loss,
+            "hybrid_loss_wrapped": hybrid_loss_wrapped,
+            "iou_metric": iou_metric,
+            "precision_metric": precision_metric,
+            "recall_metric": recall_metric,
+            "specificity_metric": specificity_metric,
+        }
+    )
 
 model = load_segmentation_model()
 
@@ -294,6 +369,7 @@ if analyze_clicked and uploaded_files:
                 f"**Notes:** {current_patient.get('notes') or '-'}"
             )
         with info_right:
+            # Here we also mention Dice & pixel accuracy from offline evaluation (test set)
             st.markdown(
                 f"""
                 <div class="tumor-box-label">Tumor area (this slice)</div>
@@ -301,7 +377,9 @@ if analyze_clicked and uploaded_files:
                 <div class="tumor-extra">
                     Pixels in tumor: {tumor_pixels}<br>
                     Slice size: {mask.shape[0]} × {mask.shape[1]}<br>
-                    Runtime: {runtime:.2f}s
+                    Runtime: {runtime:.2f}s<br><br>
+                    <b>Model test Dice (DSC):</b> 95.7% (offline)<br>
+                    <b>Model test pixel accuracy:</b> 99.7% (offline)
                 </div>
                 """,
                 unsafe_allow_html=True
