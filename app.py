@@ -369,7 +369,6 @@ if analyze_clicked and uploaded_files:
                 f"**Notes:** {current_patient.get('notes') or '-'}"
             )
         with info_right:
-            # Here we also mention Dice & pixel accuracy from offline evaluation (test set)
             st.markdown(
                 f"""
                 <div class="tumor-box-label">Tumor area (this slice)</div>
@@ -378,8 +377,7 @@ if analyze_clicked and uploaded_files:
                     Pixels in tumor: {tumor_pixels}<br>
                     Slice size: {mask.shape[0]} × {mask.shape[1]}<br>
                     Runtime: {runtime:.2f}s<br><br>
-                    <b>Model test Dice (DSC):</b> 95.7% (offline)<br>
-                    <b>Model test pixel accuracy:</b> 99.7% (offline)
+                    <b>Model test Dice (DSC):</b> 95.7%
                 </div>
                 """,
                 unsafe_allow_html=True
